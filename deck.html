@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Innodata Solution Deck - Harbor Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: 16in 9in;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0f19;
+      color: #f9fafb;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .slide {
+      width: 16in;
+      height: 9in;
+      padding: 1in;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      background: radial-gradient(circle at top right, #1e293b 0%, #0b0f19 70%);
+      border-bottom: 2px solid #1f2937;
+    }
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5in;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: #ffffff;
+      margin-top: 0.25rem;
+    }
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 500;
+      color: #9ca3af;
+      margin-top: 0.5rem;
+    }
+    .slide-body {
+      flex: 1;
+      display: flex;
+      gap: 0.6in;
+    }
+    .col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35in;
+    }
+    .card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      padding: 0.4in;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15in;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #d1d5db;
+    }
+    .code-snippet {
+      background: #030712;
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 0.3in;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #e5e7eb;
+      white-space: pre;
+    }
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #1f2937;
+      padding-top: 0.25in;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .tag-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.3in;
+    }
+    .stat-box {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 0.3in;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #3b82f6;
+    }
+    .stat-label {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-top: 0.1in;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+    <div style="max-width: 12in; display:flex; flex-direction:column; gap:0.4in; align-items:center;">
+      <span class="badge">Innodata AI Hackathon &bull; Coding Task Factory</span>
+      <h1 style="font-size: 3.8rem; line-height: 1.1;">Automated Task-Generation Pipeline</h1>
+      <h2 style="font-size: 1.8rem; max-width: 9in; color: #94a3b8;">
+        Synthesizing Containerized Harbor v0.25.x Benchmark Tasks from <span style="color:#60a5fa;">pallets/click</span>
+      </h2>
+      <div style="margin-top: 0.4in; display:flex; gap: 1.5in; font-size: 1.1rem; color: #cbd5e1;">
+        <div><strong>Author:</strong> Dhruv Sharma</div>
+        <div><strong>Target Repository:</strong> pallets/click @ baseline e0d8b58</div>
+        <div><strong>Specification:</strong> Harbor Standard v0.25.x</div>
+      </div>
+    </div>
+    <div class="slide-footer" style="position: absolute; bottom: 0.8in; width: 14in;">
+      <span>Innodata AI Hackathon Solution Deck</span>
+      <span>November 2026</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: Problem Statement -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="badge">The Challenge</span>
+        <h1>Why Automated Task Generation is Critical</h1>
+        <h2>The bottleneck in evaluating and fine-tuning frontier coding agents</h2>
+      </div>
+      <span style="font-family:'JetBrains Mono'; color:#64748b; font-size:1.1rem;">02 / 06</span>
+    </div>
+    <div class="slide-body">
+      <div class="col">
+        <div class="card">
+          <div class="card-title">1. The Need for Real-World AI Benchmarks</div>
+          <div class="card-text">
+            Frontier coding LLMs (Claude 3.5 Sonnet, GPT-4o, DeepSeek-Coder) cannot be evaluated accurately with synthetic LeetCode-style puzzles. They require authentic open-source codebases with complex dependency trees, real bug reproductions, and strict verification suites.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">2. The Manual Authoring Bottleneck</div>
+          <div class="card-text">
+            Handcrafting isolated container tasks (SWE-bench / Terminal-Bench style) takes experienced software engineers 3 to 5 hours per task. Pinned environments, dependency resolution, and oracle solutions must be maintained by hand.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-title">3. The Harbor v0.25.x Standard</div>
+          <div class="card-text">
+            Harbor introduces standardized, sandboxed task execution for Terminal-Bench 2.0. Every problem requires a strict layout: `task.toml` metadata, `instruction.md`, isolated `Dockerfile`, `solve.sh` oracle script, and a fail-to-pass `test.sh` verification harness.
+          </div>
+        </div>
+        <div class="card" style="border-color: #3b82f6; background: rgba(59, 130, 246, 0.08);">
+          <div class="card-title">Our Solution</div>
+          <div class="card-text">
+            An autonomous pipeline that ingests verified baseline commits from <strong>pallets/click</strong>, automatically mining bug patches to synthesize 100% compliant Harbor container packages ready for evaluation.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Harbor Task-Generation Pipeline</span>
+      <span>Problem Analysis</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Architecture & Layout -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="badge">System Architecture</span>
+        <h1>Harbor v0.25.x Standardized Architecture</h1>
+        <h2>Strict directory contracts ensuring full evaluation reproducibility</h2>
+      </div>
+      <span style="font-family:'JetBrains Mono'; color:#64748b; font-size:1.1rem;">03 / 06</span>
+    </div>
+    <div class="slide-body">
+      <div class="col">
+        <div class="code-snippet">
+tasks/&lt;task-name&gt;/
+├── instruction.md          # Clear prompt provided to agent
+├── task.toml               # TOML manifest (timeouts, resources)
+├── environment/
+│   └── Dockerfile          # Python 3.11 sandbox @ baseline e0d8b58
+├── solution/
+│   └── solve.sh            # Oracle gold patch demonstrating fix
+└── tests/
+    ├── test.sh             # Verification harness runner
+    └── test_verifier.py    # Pytest fail-to-pass test suite
+        </div>
+        <div class="card">
+          <div class="card-title">The Scoring Contract</div>
+          <div class="card-text">
+            `tests/test.sh` executes inside the container sandbox. Upon test completion, it writes a numerical score (<code>1.0</code> for pass, <code>0.0</code> for fail) directly to <code>/logs/verifier/reward.txt</code>.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Automated Synthesis Workflow</div>
+          <div class="card-text">
+            1. <strong>Baseline Pinning:</strong> Clones pallets/click at verified commit <code>e0d8b58</code>.<br>
+            2. <strong>Task Synthesis:</strong> Generates instructions, Dockerfile, and unified diff patches.<br>
+            3. <strong>Fail-to-Pass Verification:</strong> Verifies that baseline fails tests and oracle patch succeeds.<br>
+            4. <strong>Harbor Linter Validation:</strong> Automatically inspects TOML schemas and file contracts.
+          </div>
+        </div>
+        <div class="tag-grid">
+          <div class="stat-box">
+            <div class="stat-number">v0.25.0</div>
+            <div class="stat-label">Harbor Spec</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">1.0</div>
+            <div class="stat-label">Target Reward</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">0 Errors</div>
+            <div class="stat-label">Linter Score</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Harbor Task-Generation Pipeline</span>
+      <span>Architecture & Specification</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Why pallets/click -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="badge">Target Selection</span>
+        <h1>Why pallets/click is the Ideal Foundation</h1>
+        <h2>Python's most reliable CLI architecture with clean test isolation</h2>
+      </div>
+      <span style="font-family:'JetBrains Mono'; color:#64748b; font-size:1.1rem;">04 / 06</span>
+    </div>
+    <div class="slide-body">
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Industry Significance</div>
+          <div class="card-text">
+            `pallets/click` is the foundation of modern Python CLI software (used by Flask, Black, Pipenv, and AWS CLI). It powers millions of production workflows, making bug fixes in Click representative of real-world software engineering.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Clean Dependency Architecture</div>
+          <div class="card-text">
+            Unlike repositories requiring heavy C/C++ build tools, Click is written in pure, high-quality Python. This allows lightweight, fast Docker images (<code>python:3.11-slim</code>) that spin up in under 5 seconds during benchmark agent runs.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Rich, Reproducible Bug Surface</div>
+          <div class="card-text">
+            Click's modular codebase separates parameter typing (<code>types.py</code>), option parsing (<code>parser.py</code>), and command group trees (<code>core.py</code>). This provides clear, unambiguous problem statements suitable for evaluating coding agents.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Verified Baseline Commit</div>
+          <div class="card-text">
+            Pinned to commit <code>e0d8b5847e2ef30fa27ce803405c19be38d17ba7</code>, guaranteeing that all generated tasks run against a deterministic, reproducible environment without version drift.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Harbor Task-Generation Pipeline</span>
+      <span>Repository Rationale</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Generated Tasks Catalog -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="badge">Deliverables</span>
+        <h1>Mined Benchmark Tasks in pallets/click</h1>
+        <h2>Three production-grade containerized evaluation packages</h2>
+      </div>
+      <span style="font-family:'JetBrains Mono'; color:#64748b; font-size:1.1rem;">05 / 06</span>
+    </div>
+    <div class="slide-body">
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Task 1: click-paramtype-custom-formatting</div>
+          <div class="card-text">
+            <strong>Target:</strong> <code>types.py</code> &bull; <strong>Difficulty:</strong> Medium<br>
+            <strong>Problem:</strong> When a custom <code>ParamType</code> subclass omits <code>name</code>, invalid inputs throw an unhandled exception or leak <code>None</code>.<br>
+            <strong>Resolution:</strong> Implements fallback to class name in metavar formatting and error reporting.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Task 2: click-hide-sensitive-prompt-default</div>
+          <div class="card-text">
+            <strong>Target:</strong> <code>core.py</code> &bull; <strong>Difficulty:</strong> Medium<br>
+            <strong>Problem:</strong> When an option has both <code>hide_input=True</code> and a default value, Click displays the secret default in plaintext in the terminal.<br>
+            <strong>Resolution:</strong> Masks the secret default (e.g. <code>[******]</code>) while maintaining functional default usage.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Task 3: click-nested-group-subcommand-resolve</div>
+          <div class="card-text">
+            <strong>Target:</strong> <code>core.py</code> &bull; <strong>Difficulty:</strong> Hard<br>
+            <strong>Problem:</strong> In nested command groups where subcommands share prefixes, fuzzy prefix matching erroneously raises ambiguity errors for exact matches.<br>
+            <strong>Resolution:</strong> Enforces immediate exact match precedence before executing prefix matching algorithms.
+          </div>
+        </div>
+        <div class="card" style="background: rgba(16, 185, 129, 0.08); border-color: #10b981;">
+          <div class="card-title" style="color: #34d399;">Verification Summary</div>
+          <div class="card-text">
+            Each task contains its own verified oracle script (<code>solve.sh</code>) and fail-to-pass test suite (<code>test.sh</code>) ensuring complete evaluation reliability for Innodata.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Harbor Task-Generation Pipeline</span>
+      <span>Task Packages</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Summary & Live Links -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="badge">Deliverables & Summary</span>
+        <h1>Project Summary & Verification Proof</h1>
+        <h2>Ready for deployment, evaluation, and live demonstration</h2>
+      </div>
+      <span style="font-family:'JetBrains Mono'; color:#64748b; font-size:1.1rem;">06 / 06</span>
+    </div>
+    <div class="slide-body">
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Key Achievements</div>
+          <div class="card-text">
+            &bull; Built automated Python task-generation pipeline (<code>harbor_taskgen</code>)<br>
+            &bull; Pinned to verified baseline commit <code>e0d8b58</code> on <code>pallets/click</code><br>
+            &bull; Generated 3 complete, containerized task packages adhering to Harbor v0.25.x<br>
+            &bull; Built Harbor v0.25 schema linter with 100% test pass rate<br>
+            &bull; Built and deployed interactive Web Dashboard for visual demonstration
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Public GitHub Repository</div>
+          <div class="card-text">
+            <strong>URL:</strong> <a href="https://github.com/dhruv-sharma07/harbor-click-pipeline" style="color:#60a5fa; text-decoration:none;">https://github.com/dhruv-sharma07/harbor-click-pipeline</a><br>
+            Contains complete source code, Dockerfiles, test verifiers, and architecture documentation.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-title">Impact for Innodata AI Hackathon</div>
+          <div class="card-text">
+            This pipeline dramatically accelerates the creation of benchmark environments for LLMs and agentic coders, transforming hours of manual developer effort into a reproducible, one-click automated process.
+          </div>
+        </div>
+        <div class="card" style="text-align: center; padding: 0.5in;">
+          <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">Thank You!</div>
+          <div style="color: #94a3b8; margin-top: 0.1in;">Dhruv Sharma &bull; Innodata AI Hackathon 2026</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Harbor Task-Generation Pipeline</span>
+      <span>Conclusion</span>
+    </div>
+  </div>
+
+</body>
+</html>
