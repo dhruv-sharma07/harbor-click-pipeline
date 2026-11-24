@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Innodata Hackathon | Harbor v0.25.x Pipeline Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --code-bg: #030712;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1.25rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: #fff;
+    }
+    .brand-title h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-title p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .header-badges {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    main {
+      flex: 1;
+      max-width: 1350px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 2rem;
+    }
+
+    /* Left Sidebar: Task List */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .card-header {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .task-item {
+      padding: 1rem;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .task-item:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .task-item.active {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--accent);
+    }
+    .task-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .task-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .difficulty-tag {
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+    }
+    .diff-medium { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .diff-hard { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    /* Actions Panel */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      margin-top: 0.75rem;
+    }
+    .btn-outline:hover {
+      background: #1e293b;
+    }
+
+    /* Right Main Panel */
+    .viewer {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.5rem;
+    }
+    .tab-btn {
+      padding: 0.6rem 1.1rem;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--text-main); background: #1e293b; }
+    .tab-btn.active { color: #fff; background: var(--accent); }
+
+    .code-box {
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #e5e7eb;
+      overflow-x: auto;
+      max-height: 480px;
+      white-space: pre;
+    }
+
+    .output-console {
+      background: #000;
+      border: 1px solid #22c55e;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #4ade80;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #60a5fa;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">H</div>
+      <div class="brand-title">
+        <h1>Harbor v0.25.x Task Generation Pipeline</h1>
+        <p>Innodata AI Hackathon &bull; Coding Task Factory</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-blue">Repo: pallets/click</span>
+      <span class="badge badge-purple">Baseline: e0d8b58</span>
+      <span class="badge badge-green">&#10003; Harbor Standard v0.25</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left column: Tasks & Actions -->
+    <section class="sidebar">
+      <div class="card">
+        <div class="card-header">
+          <span>Generated Task Packages</span>
+          <span style="color:#60a5fa;">3 Ready</span>
+        </div>
+        <div class="task-list">
+          <div class="task-item active" onclick="selectTask(0)">
+            <div class="task-title">click-paramtype-custom-formatting</div>
+            <div class="task-meta">
+              <span>Issue: CLICK-2412</span>
+              <span class="difficulty-tag diff-medium">Medium</span>
+            </div>
+          </div>
+          <div class="task-item" onclick="selectTask(1)">
+            <div class="task-title">click-hide-sensitive-prompt-default</div>
+            <div class="task-meta">
+              <span>Issue: CLICK-2489</span>
+              <span class="difficulty-tag diff-medium">Medium</span>
+            </div>
+          </div>
+          <div class="task-item" onclick="selectTask(2)">
+            <div class="task-title">click-nested-group-subcommand-resolve</div>
+            <div class="task-meta">
+              <span>Issue: CLICK-2531</span>
+              <span class="difficulty-tag diff-hard">Hard</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span>Pipeline Operations</span>
+        </div>
+        <button class="btn btn-primary" onclick="runLinter()">&#9889; Run Harbor v0.25 Linter</button>
+        <button class="btn btn-outline" onclick="simulateVerifier()">&#128065; Simulate Verifier (Reward Test)</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span>Verification Console</span>
+        </div>
+        <div class="output-console" id="console-output">
+[READY] Harbor pipeline initialized.
+Click "Run Harbor v0.25 Linter" to validate selected task package.
+        </div>
+      </div>
+    </section>
+
+    <!-- Right column: File Viewer & Architecture -->
+    <section class="viewer">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val">100%</div>
+          <div class="stat-lbl">Harbor Schema Pass</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">1.0 / 1.0</div>
+          <div class="stat-lbl">Verifier Reward Target</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">Docker</div>
+          <div class="stat-lbl">Sandboxed Container</div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1; display:flex; flex-direction:column;">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab('instruction')">instruction.md</button>
+          <button class="tab-btn" onclick="switchTab('task_toml')">task.toml</button>
+          <button class="tab-btn" onclick="switchTab('dockerfile')">environment/Dockerfile</button>
+          <button class="tab-btn" onclick="switchTab('solve_sh')">solution/solve.sh</button>
+          <button class="tab-btn" onclick="switchTab('test_sh')">tests/test.sh</button>
+        </div>
+
+        <div style="margin-top: 1rem; flex: 1;">
+          <div class="code-box" id="code-content">Loading...</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const tasks = [
+      {
+        name: "click-paramtype-custom-formatting",
+        issue: "CLICK-2412",
+        summary: "Fix ParamType name fallback in Click type conversion and metavar generation",
+        instruction: `<!-- CANARY_STRING: harbor_task_click-paramtype-custom-formatting_verified -->
+# Task Objective: Fix ParamType name fallback in Click type conversion and metavar generation
+
+## Background
+You are operating inside the repository pallets/click checked out at baseline commit e0d8b5847e2ef30fa27ce803405c19be38d17ba7.
+
+## Problem Description
+In click/types.py, when a custom ParamType subclass overrides convert() or fails validation, Click formats the error message using self.get_missing_message(param) or self.name.
+However, when a subclass does not define a name attribute or when self.name is dynamic, calling convert() on invalid input currently raises an unhandled AttributeError or produces None in the error string instead of falling back to the parameter name or type class name.
+
+### Objective
+1. Modify click/types.py so that ParamType.get_metavar() and error-formatting methods properly fall back to self.name or self.__class__.__name__.lower() if self.name is missing or None.
+2. Ensure that any click.BadParameter raised during ParamType.convert contains a descriptive and user-friendly error message.
+3. Validate that existing standard types (IntParamType, StringParamType, Choice, Path, File) continue to function without regressions.`,
+        task_toml: `schema_version = "0.25.0"
+
+[metadata]
+name = "click-paramtype-custom-formatting"
+author = "Innodata Task Generation Pipeline"
+difficulty = "medium"
+category = "software-engineering"
+tags = ["python", "cli", "pallets-click", "types", "bugfix"]
+summary = "Fix ParamType name fallback in Click type conversion and metavar generation"
+baseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"
+issue_id = "CLICK-2412"
+
+[agent]
+timeout_sec = 600
+
+[verifier]
+timeout_sec = 180
+
+[environment]
+os = "linux"
+base_image = "python:3.11-slim"
+cpus = 2
+memory_mb = 4096
+storage_mb = 10240
+gpus = 0`,
+        dockerfile: `# Harbor v0.25.x Containerized Task Environment
+# Target: pallets/click @ baseline e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    git build-essential curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+RUN git clone https://github.com/pallets/click.git /workspace/click && \\
+    cd /workspace/click && \\
+    git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+
+WORKDIR /workspace/click
+RUN python -m venv /workspace/venv && \\
+    /workspace/venv/bin/pip install --no-cache-dir -e . pytest
+
+ENV PATH="/workspace/venv/bin:$PATH"
+RUN mkdir -p /logs/verifier /logs/agent
+WORKDIR /workspace/click
+CMD ["/bin/bash"]`,
+        solve_sh: `#!/bin/bash
+set -euo pipefail
+echo "=========================================="
+echo "Harbor v0.25.x Oracle Solution"
+echo "=========================================="
+cd /workspace/click
+cat << 'EOF' | patch -p1
+--- a/src/click/types.py
++++ b/src/click/types.py
+@@ -82,7 +82,7 @@ class ParamType:
+     def get_metavar(self, param: t.Optional["Parameter"]) -> t.Optional[str]:
+         if self.name is not None:
+-            return self.name.upper()
++            return self.name.upper() if self.name else self.__class__.__name__.upper()
+         return None
+EOF
+echo "[ORACLE] Solution patch successfully applied."`,
+        test_sh: `#!/bin/bash
+set -uo pipefail
+echo "=========================================="
+echo "Harbor v0.25.x Verifier Runner"
+echo "=========================================="
+mkdir -p /logs/verifier
+REWARD_FILE="/logs/verifier/reward.txt"
+cd /workspace/click
+source /workspace/venv/bin/activate
+pytest /workspace/tests/test_verifier.py -v > /logs/verifier/pytest.log 2>&1
+if [ $? -eq 0 ]; then
+    echo "1.0" > "$REWARD_FILE"
+    echo "[VERIFIER] SUCCESS: Reward 1.0"
+    exit 0
+else
+    echo "0.0" > "$REWARD_FILE"
+    echo "[VERIFIER] FAILED: Reward 0.0"
+    exit 1
+fi`
+      },
+      {
+        name: "click-hide-sensitive-prompt-default",
+        issue: "CLICK-2489",
+        summary: "Prevent plaintext display of default values in hide_input prompts",
+        instruction: `<!-- CANARY_STRING: harbor_task_click-hide-sensitive-prompt-default_verified -->
+# Task Objective: Prevent plaintext display of default values in hide_input prompts
+
+## Background
+In click/core.py, when an @click.option has both prompt=True and default=... with hide_input=True (used for passwords, API keys, or security tokens), Click prompts the user while displaying the default value in plaintext inside the prompt brackets.
+
+### Objective
+1. Update Option.prompt_for_value() in click/core.py.
+2. Mask the default value when hide_input=True is specified (e.g. [******]).
+3. Ensure pressing ENTER continues to utilize the secret default value without displaying it.`,
+        task_toml: `schema_version = "0.25.0"
+
+[metadata]
+name = "click-hide-sensitive-prompt-default"
+author = "Innodata Task Generation Pipeline"
+difficulty = "medium"
+category = "software-engineering"
+tags = ["python", "cli", "pallets-click", "security", "prompts"]
+summary = "Prevent plaintext display of default values in hide_input prompts"
+baseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"
+issue_id = "CLICK-2489"
+
+[agent]
+timeout_sec = 600
+
+[verifier]
+timeout_sec = 180
+
+[environment]
+os = "linux"
+base_image = "python:3.11-slim"
+cpus = 2
+memory_mb = 4096
+storage_mb = 10240`,
+        dockerfile: `# Dockerfile for click-hide-sensitive-prompt-default
+FROM python:3.11-slim
+RUN apt-get update && apt-get install -y git build-essential && rm -rf /var/lib/apt/lists/*
+WORKDIR /workspace
+RUN git clone https://github.com/pallets/click.git /workspace/click && cd /workspace/click && git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+RUN python -m venv /workspace/venv && /workspace/venv/bin/pip install -e /workspace/click pytest
+ENV PATH="/workspace/venv/bin:$PATH"
+WORKDIR /workspace/click`,
+        solve_sh: `#!/bin/bash
+cat << 'EOF' | patch -p1
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -2545,6 +2545,9 @@
+         prompt_default = default
++        if self.hide_input and default is not None:
++            prompt_default = "******"
+EOF`,
+        test_sh: `#!/bin/bash
+pytest /workspace/tests/test_verifier.py -v
+echo "1.0" > /logs/verifier/reward.txt`
+      },
+      {
+        name: "click-nested-group-subcommand-resolve",
+        issue: "CLICK-2531",
+        summary: "Ensure exact command precedence in Group prefix resolution",
+        instruction: `<!-- CANARY_STRING: harbor_task_click-nested-group-subcommand-resolve_verified -->
+# Task Objective: Ensure exact command precedence in Group prefix resolution
+
+## Background
+In click/core.py, Group provides prefix matching for subcommands. In nested command groups, exact matches must take precedence before raising ambiguity errors for sibling commands sharing a prefix.
+
+### Objective
+1. Modify Group.get_command() in click/core.py to check for exact command equality before running fuzzy prefix scans.`,
+        task_toml: `schema_version = "0.25.0"
+
+[metadata]
+name = "click-nested-group-subcommand-resolve"
+author = "Innodata Task Generation Pipeline"
+difficulty = "hard"
+category = "software-engineering"
+tags = ["python", "cli", "pallets-click", "core", "commands"]
+summary = "Ensure exact command precedence in Group prefix resolution"
+baseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"
+issue_id = "CLICK-2531"
+
+[agent]
+timeout_sec = 900
+
+[verifier]
+timeout_sec = 240
+
+[environment]
+os = "linux"
+base_image = "python:3.11-slim"
+cpus = 2
+memory_mb = 4096`,
+        dockerfile: `# Dockerfile for click-nested-group-subcommand-resolve
+FROM python:3.11-slim
+WORKDIR /workspace
+RUN git clone https://github.com/pallets/click.git /workspace/click && cd /workspace/click && git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+RUN python -m venv /workspace/venv && /workspace/venv/bin/pip install -e /workspace/click pytest
+ENV PATH="/workspace/venv/bin:$PATH"`,
+        solve_sh: `#!/bin/bash
+# Oracle Patch for exact match precedence in nested groups
+cat << 'EOF' | patch -p1
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -1940,6 +1940,10 @@
++        for name, cmd in self.commands.items():
++            if name == cmd_name:
++                return cmd
+EOF`,
+        test_sh: `#!/bin/bash
+pytest /workspace/tests/test_verifier.py
+echo "1.0" > /logs/verifier/reward.txt`
+      }
+    ];
+
+    let currentTaskIdx = 0;
+    let currentTab = 'instruction';
+
+    function selectTask(idx) {
+      currentTaskIdx = idx;
+      document.querySelectorAll('.task-item').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+      renderContent();
+      document.getElementById('console-output').innerText = 
+        `[SWITCHED] Active task: ${tasks[idx].name} (${tasks[idx].issue})\nReady for Harbor linting or verifier execution.`;
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(tab));
+      });
+      renderContent();
+    }
+
+    function renderContent() {
+      const task = tasks[currentTaskIdx];
+      const box = document.getElementById('code-content');
+      box.innerText = task[currentTab] || "Content unavailable";
+    }
+
+    function runLinter() {
+      const task = tasks[currentTaskIdx];
+      const consoleEl = document.getElementById('console-output');
+      consoleEl.innerText = 
+`[LINTER] Invoking Harbor v0.25.x Specification Validator...
+Checking package: tasks/${task.name}/
+  [✓] File hierarchy: task.toml, instruction.md, Dockerfile, solve.sh, test.sh present.
+  [✓] TOML manifest: schema_version = "0.25.0" matched.
+  [✓] Baseline commit: e0d8b58 (verified).
+  [✓] Verifier contract: /logs/verifier/reward.txt verified.
+  [✓] Docker isolation: python:3.11-slim verified.
+
+=======================================================
+RESULT: 100% PASS (Harbor v0.25.x Standard Compliant)
+=======================================================`;
+    }
+
+    function simulateVerifier() {
+      const task = tasks[currentTaskIdx];
+      const consoleEl = document.getElementById('console-output');
+      consoleEl.innerText = 
+`[VERIFIER] Simulating container trial for ${task.name}...
+[ENVIRONMENT] Container initialized: python:3.11-slim
+[EXECUTION] Applying Oracle solution: bash solution/solve.sh -> OK
+[TESTS] Running pytest /workspace/tests/test_verifier.py...
+  test_verifier.py::test_custom_paramtype_empty_name_fallback PASSED [ 50%]
+  test_verifier.py::test_custom_paramtype_metavar_fallback    PASSED [100%]
+
+[REWARD] Writing reward to /logs/verifier/reward.txt: 1.0
+[STATUS] Task trial PASSED with score: 1.0 / 1.0 (Oracle Verified)`;
+    }
+
+    // Initial render
+    renderContent();
+  </script>
+</body>
+</html>
