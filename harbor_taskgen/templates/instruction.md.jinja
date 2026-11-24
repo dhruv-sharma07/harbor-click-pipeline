@@ -1,0 +1,14 @@
+<!-- CANARY_STRING: harbor_task_{{ name }}_verified -->
+# Task Objective: {{ summary }}
+
+## Background
+You are operating inside the repository `pallets/click` checked out at baseline commit `{{ baseline_commit }}`.
+
+## Problem Description
+{{ instruction }}
+
+## Requirements & Constraints
+1. Edit the relevant files directly in `/workspace/click`.
+2. Do not modify external dependencies or environment configurations.
+3. Ensure all existing `click` tests continue to pass without regressions.
+4. Your solution will be validated by running the verification suite via `pytest /workspace/tests/test_verifier.py`.

@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "=========================================="
+echo "Harbor v0.25.x Oracle Solution: {{ name }}"
+echo "=========================================="
+
+cd /workspace/click
+
+# Apply Oracle Solution
+cat << 'EOF' | patch -p1
+{{ solution_patch }}
+EOF
+
+echo "[ORACLE] Solution patch successfully applied."

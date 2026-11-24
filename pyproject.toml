@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harbor-click-pipeline"
+version = "0.25.0"
+description = "Automated containerized task-generation pipeline using Harbor v0.25.x for pallets/click (Innodata AI Hackathon)"
+authors = [
+    { name = "Dhruv Sharma" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+harbor-click = "harbor_taskgen.cli:main"

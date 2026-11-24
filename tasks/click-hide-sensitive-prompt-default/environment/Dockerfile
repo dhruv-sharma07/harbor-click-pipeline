@@ -1,0 +1,26 @@
+# Harbor v0.25.x Containerized Task Environment
+# Target: pallets/click @ baseline e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+FROM python:3.11-slim
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /workspace
+# Clone pallets/click and checkout the verified baseline commit
+RUN git clone https://github.com/pallets/click.git /workspace/click && \
+    cd /workspace/click && \
+    git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+WORKDIR /workspace/click
+# Create virtual environment and install dependencies
+RUN python -m venv /workspace/venv && \
+    /workspace/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    /workspace/venv/bin/pip install --no-cache-dir -e . && \
+    /workspace/venv/bin/pip install --no-cache-dir pytest
+ENV PATH="/workspace/venv/bin:$PATH"
+ENV VIRTUAL_ENV="/workspace/venv"
+# Create log directories for verifier scoring according to Harbor standard
+RUN mkdir -p /logs/verifier /logs/agent
+WORKDIR /workspace/click
+CMD ["/bin/bash"]

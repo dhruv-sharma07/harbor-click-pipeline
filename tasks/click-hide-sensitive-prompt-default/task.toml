@@ -1,0 +1,21 @@
+schema_version = "0.25.0"
+[metadata]
+name = "click-hide-sensitive-prompt-default"
+author = "Innodata Task Generation Pipeline"
+difficulty = "medium"
+category = "software-engineering"
+tags = ["python", "cli", "pallets-click", "security", "prompts"]
+summary = "Prevent plaintext display of default values in hide_input prompts"
+baseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"
+issue_id = "CLICK-2489"
+[agent]
+timeout_sec = 600
+[verifier]
+timeout_sec = 180
+[environment]
+os = "linux"
+base_image = "python:3.11-slim"
+cpus = 2
+memory_mb = 4096
+storage_mb = 10240
+gpus = 0

@@ -1,0 +1,25 @@
+schema_version = "{{ schema_version }}"
+
+[metadata]
+name = "{{ name }}"
+author = "{{ author }}"
+difficulty = "{{ difficulty }}"
+category = "{{ category }}"
+tags = {{ tags }}
+summary = "{{ summary }}"
+baseline_commit = "{{ baseline_commit }}"
+{% if issue_id %}issue_id = "{{ issue_id }}"{% endif %}
+
+[agent]
+timeout_sec = {{ agent_timeout_sec }}
+
+[verifier]
+timeout_sec = {{ verifier_timeout_sec }}
+
+[environment]
+os = "{{ os }}"
+base_image = "{{ base_image }}"
+cpus = {{ cpus }}
+memory_mb = {{ memory_mb }}
+storage_mb = {{ storage_mb }}
+gpus = {{ gpus }}

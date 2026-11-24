@@ -1,0 +1,4 @@
+# Harbor Task Generation Pipeline Requirements
+jinja2>=3.1.2
+pydantic>=2.0.0
+pytest>=7.0.0
