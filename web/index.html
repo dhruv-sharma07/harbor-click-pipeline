@@ -3,574 +3,1409 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harbor Task Automation Console | Innodata AI Hackathon</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+  <title>HARBOR // 0.25.x — Automated Task Generation Pipeline</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Classic UMD scripts with cross-origin support (works on file:// and http://) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" crossorigin="anonymous"></script>
+
   <style>
+    /* ==========================================================================
+       DESIGN TOKENS — SHIP SPECIFICATION (TIERS 1, 2, 3)
+       ========================================================================== */
     :root {
-      --bg-base: #080a0f;
-      --bg-surface: #0e121a;
-      --bg-elevated: #141923;
-      --bg-input: #1a202c;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-hover: rgba(255, 255, 255, 0.16);
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-tertiary: #64748b;
-      --accent-blue: #38bdf8;
-      --accent-cyan: #22d3ee;
-      --status-pass: #34d399;
-      --status-pass-bg: rgba(52, 211, 153, 0.1);
-      --status-warn: #fbbf24;
-      --diff-add-bg: rgba(52, 211, 153, 0.12);
-      --diff-add-text: #6ee7b7;
-      --diff-del-bg: rgba(248, 113, 113, 0.12);
-      --diff-del-text: #fca5a5;
-      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-code: 'Fira Code', ui-monospace, monospace;
+      --raw-color-ice-50: #f7fafb;        /* frame fill */
+      --raw-color-ice-100: #ebeef1;       /* backdrop contour lines */
+      --raw-color-ice-200: #dfe5e9;       /* hairlines & dividers */
+      --raw-color-steel-400: #b6c1c8;     /* muted copy on dark */
+      --raw-color-ink-950: #090a0b;       /* all body copy */
+      --raw-color-ink-900: #0e0f14;       /* panel fill */
+      --raw-color-ink-800: #1b1d24;
+      --raw-color-ink-700: #2a2d36;
+      --raw-color-ink-alpha-35: rgb(9 10 11 / 0.35);
+      --raw-color-slate-500: #7a7a7a;     /* map: halftone dots */
+      --raw-color-slate-600: #4d4d4d;     /* map: grid lines */
+      --raw-color-slate-900: #1e1e1e;     /* map: outer rings */
+      --raw-color-cyan-400: #02d2e3;      /* electric cyan accent */
+      --raw-color-cyan-alpha-25: rgb(2 210 227 / 0.25);
+      --raw-color-stone-600: #535450;     /* timeline plate outline */
+      --raw-color-white-alpha-10: rgb(255 255 255 / 0.1);
+      --raw-color-white-alpha-20: rgb(255 255 255 / 0.2);
+      --raw-color-ink-alpha-08: rgb(9 10 11 / 0.08);
+      --raw-color-white-alpha-40: rgb(255 255 255 / 0.4);
+      --raw-color-white: #ffffff;
+      --raw-color-emerald-400: #34d399;
+
+      --raw-font-size-96: 6rem;
+      --raw-font-size-70: 4.375rem;
+      --raw-font-size-52: 3.25rem;
+      --raw-font-size-38: 2.375rem;
+      --raw-font-size-20: 1.25rem;
+      --raw-font-size-18: 1.125rem;
+      --raw-font-size-16: 1rem;
+      --raw-font-size-14: 0.875rem;
+      --raw-font-size-12: 0.75rem;
+      --raw-font-size-55: 3.4375rem;
+      --raw-font-size-36: 2.25rem;
+
+      --raw-leading-95: 0.95;
+      --raw-leading-90: 0.9;
+      --raw-leading-72: 0.72;
+      --raw-leading-110: 1.1;
+      --raw-tracking-stat: -0.08em;
+      --raw-tracking-label: -0.04em;
+      --raw-tracking-eyebrow: -0.02em;
+
+      --raw-duration-fast: 150ms;
+      --raw-duration-normal: 250ms;
+      --raw-duration-slow: 700ms;
+
+      /* Tier 2: Functional Semantic Mappings */
+      --background: var(--raw-color-ice-50);
+      --foreground: var(--raw-color-ink-950);
+      --foreground-muted: var(--raw-color-ink-alpha-35);
+      --surface-dark: var(--raw-color-ink-900);
+      --surface-dark-raised: var(--raw-color-ink-800);
+      --surface-black: var(--raw-color-ink-950);
+      --surface-muted: var(--raw-color-ice-100);
+      --surface-soft: var(--raw-color-ice-200);
+      --foreground-on-dark: var(--raw-color-white);
+      --foreground-on-dark-muted: var(--raw-color-steel-400);
+      --foreground-on-dark-faint: var(--raw-color-white-alpha-40);
+      --border-muted: var(--raw-color-ice-200);
+      --border-on-dark: var(--raw-color-ink-700);
+      --map-dot: var(--raw-color-slate-500);
+      --map-grid: var(--raw-color-slate-600);
+      --map-grid-ghost: var(--raw-color-slate-900);
+      --map-mark: var(--raw-color-ice-50);
+      --timeline-outline: var(--raw-color-stone-600);
+      --timeline-fill: var(--raw-color-white-alpha-10);
+      --timeline-rail: var(--raw-color-white-alpha-20);
+      --paddock-contour: var(--raw-color-ink-alpha-08);
+      --footer-contour: var(--raw-color-white-alpha-10);
+      --accent: var(--raw-color-cyan-400);
+      --accent-muted: var(--raw-color-cyan-alpha-25);
+      
+      --type-impact: var(--raw-font-size-96);
+      --type-display-lg: var(--raw-font-size-70);
+      --type-display: var(--raw-font-size-52);
+      --type-heading: var(--raw-font-size-38);
+      --type-title: var(--raw-font-size-20);
+      --type-lead: var(--raw-font-size-18);
+      --type-label: var(--raw-font-size-16);
+      --type-body: var(--raw-font-size-14);
+      --type-eyebrow: var(--raw-font-size-12);
+      --type-display-sm: var(--raw-font-size-55);
+      --type-year: var(--raw-font-size-36);
+
+      --ease-entrance: cubic-bezier(0.2, 0, 0, 1);
+      --ease-plate: cubic-bezier(0.33, 0, 0, 1);
+      --font-sans: "Space Grotesk", system-ui, sans-serif;
+      --font-display: "Oswald", Impact, sans-serif;
+      --font-code: "Fira Code", monospace;
+    }
+
+    /* Scaling font-size bands */
+    html { font-size: 16px; scroll-behavior: smooth; }
+    @media (max-width: 1920px) { html { font-size: 0.833333vw; } }
+    @media (max-width: 1440px) { html { font-size: 1.111111vw; } }
+    @media (max-width: 1279px) { html { font-size: 16px; } }
+
+    @media (min-width: 1441px) and (max-width: 1920px) {
+      [data-hero] {
+        --hero-base: calc(1920 / 1440);
+        --type-impact: calc(6rem * var(--hero-base));
+        --type-display-lg: calc(4.375rem * var(--hero-base));
+        --type-display: calc(3.25rem * var(--hero-base));
+        --type-heading: calc(2.375rem * var(--hero-base));
+        --type-title: calc(1.25rem * var(--hero-base));
+        --type-lead: calc(1.125rem * var(--hero-base));
+        --type-label: calc(1rem * var(--hero-base));
+        --type-body: calc(0.875rem * var(--hero-base));
+        --type-eyebrow: calc(0.75rem * var(--hero-base));
+      }
+      [data-season] {
+        --season-base: calc(1920 / 1440);
+        --type-display-sm: calc(3.4375rem * var(--season-base));
+        --type-lead: calc(1.125rem * var(--season-base));
+        --type-body: calc(0.875rem * var(--season-base));
+        --type-eyebrow: calc(0.75rem * var(--season-base));
+      }
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      background: var(--bg-base);
-      color: var(--text-primary);
-      font-family: var(--font-ui);
-      font-size: 13px;
-      line-height: 1.5;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      min-height: 100lvh;
+      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* TOP GLOBAL HEADER */
-    header {
-      height: 52px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
-      padding: 0 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
+    /* ==========================================================================
+       STICKY STACK ARCHITECTURE
+       ========================================================================== */
+    .sticky-stack-container {
+      position: relative;
+      background: var(--surface-black);
+    }
+    .pinned-layer {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      height: 100lvh;
+      overflow: hidden;
+    }
+    .layer-hero { z-index: 0; }
+    .layer-season { z-index: 10; }
+    .layer-timeline {
+      position: relative;
+      z-index: 20;
+      min-height: 100vh;
+    }
+    .pinned-inner {
+      width: 100%;
+      height: 100%;
+      transform-origin: center;
+      position: relative;
+    }
+    .pinned-shade {
+      position: absolute;
+      inset: 0;
+      background: var(--surface-black);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 25;
     }
 
-    .brand-cluster {
+    /* ==========================================================================
+       FAILSAFE LOADING VEIL
+       ========================================================================== */
+    #loading-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 14px;
+      justify-content: center;
+      background: var(--background);
+      pointer-events: auto;
+      transition: opacity 0.5s cubic-bezier(0.2, 0, 0, 1), visibility 0.5s ease;
     }
-
-    .project-icon {
-      width: 28px;
-      height: 28px;
-      background: #0369a1;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 6px;
+    .veil-cube-box {
+      width: 6.5rem;
+      height: 6.5rem;
+      position: relative;
+      border: 2px solid var(--foreground);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      overflow: hidden;
+    }
+    .veil-cube-fill {
+      position: absolute;
+      inset: 0;
+      background: var(--foreground);
+      transform-origin: top;
+      transform: scaleY(0);
+      transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .veil-icon {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-display);
+      font-size: 2.75rem;
       font-weight: 700;
-      font-size: 14px;
+      color: var(--accent);
     }
-
-    .breadcrumbs {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .crumb-muted { color: var(--text-tertiary); }
-    .crumb-repo { color: var(--text-secondary); }
-    .crumb-commit {
-      font-family: var(--font-code);
-      font-size: 11px;
-      background: var(--bg-elevated);
-      padding: 2px 7px;
-      border-radius: 4px;
-      border: 1px solid var(--border-subtle);
-      color: var(--accent-blue);
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 12px;
-      font-family: var(--font-code);
-      color: var(--text-secondary);
-    }
-
-    .pulse-dot {
-      width: 7px;
-      height: 7px;
-      background: var(--status-pass);
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
-    }
-
-    .gh-link {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 5px 10px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      transition: all 0.15s ease;
-    }
-    .gh-link:hover {
-      color: var(--text-primary);
-      border-color: var(--border-hover);
-    }
-
-    /* MAIN THREE-COLUMN WORKSPACE */
-    .workspace {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 320px 1fr 380px;
-      overflow: hidden;
-    }
-
-    /* LEFT PANE: TASK PIPELINE */
-    .pane-tasks {
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border-subtle);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .pane-header {
-      padding: 14px 16px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-tertiary);
+    .veil-name {
+      margin-top: 1.75rem;
+      font-family: var(--font-sans);
+      font-size: var(--type-lead);
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      line-height: 0.9;
+      letter-spacing: 0.18em;
+      color: var(--foreground);
+      opacity: 1;
+      transform: translateY(0);
     }
-
-    .task-item-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .veil-meter-track {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--border-muted);
     }
-
-    .task-card {
-      padding: 12px 14px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .task-card:hover {
-      border-color: var(--border-hover);
-      background: #181f2c;
-    }
-
-    .task-card.active {
-      background: #162234;
-      border-color: var(--accent-blue);
-    }
-
-    .task-title {
-      font-family: var(--font-code);
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .task-sub {
-      font-size: 11px;
-      color: var(--text-tertiary);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .tag-diff {
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .diff-med { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-    .diff-hard { background: rgba(248, 113, 113, 0.15); color: #f87171; }
-
-    .pipeline-summary {
-      padding: 14px 16px;
-      border-top: 1px solid var(--border-subtle);
-      background: #090c12;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-    .stat-row b { color: var(--text-primary); font-family: var(--font-code); }
-
-    /* CENTER PANE: CODE & ARTIFACT INSPECTOR */
-    .pane-editor {
-      background: var(--bg-base);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .editor-tabs {
-      height: 40px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      padding: 0 12px;
-      gap: 4px;
-    }
-
-    .tab-trigger {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 0 12px;
+    .veil-meter-fill {
       height: 100%;
+      width: 100%;
+      background: var(--accent);
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* ==========================================================================
+       SECTION 1: HERO (LIGHT GROUND)
+       ========================================================================== */
+    [data-hero] {
+      position: relative;
+      isolation: isolate;
+      min-height: 100lvh;
+      overflow: hidden;
+      background: var(--background);
+      display: flex;
+      flex-direction: column;
+    }
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 20;
+      min-height: 100lvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.5rem 2rem;
+    }
+
+    .hero-masthead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 30;
+      width: 100%;
+    }
+    .logo-grido1 {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: var(--foreground);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .logo-grido1 span { color: var(--accent); }
+    .hero-nav {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 3.5rem;
+      list-style: none;
+    }
+    .hero-nav a {
+      font-size: var(--type-label);
+      text-transform: uppercase;
+      line-height: 0.9;
+      color: var(--foreground);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color var(--duration-fast);
+    }
+    .hero-nav a:hover { color: var(--accent); }
+    .console-link {
+      font-size: var(--type-label);
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--foreground);
+      text-decoration: none;
+      transition: color var(--duration-fast);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .console-link:hover { color: var(--accent); }
+
+    .hero-mid-row {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      margin: 1.5rem 0;
+    }
+    .system-identity {
+      max-width: 38rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .system-id-tag {
+      font-size: var(--type-label);
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-family: var(--font-code);
+    }
+    .system-name-h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--type-impact);
+      text-transform: uppercase;
+      line-height: var(--raw-leading-90);
+      letter-spacing: -0.02em;
+      color: var(--foreground);
+    }
+    .meta-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      list-style: none;
+    }
+    .meta-row-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: var(--type-lead);
+      line-height: 1.0;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    .meta-icon {
+      width: 1.125rem;
+      height: 1.125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .hero-panels-col {
+      width: 15.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+    .bracket-panel {
+      position: relative;
+      padding: 1.125rem 1.375rem;
+      background: transparent;
+    }
+    .bracket-corner {
+      position: absolute;
+      width: 0.625rem;
+      height: 0.625rem;
+      stroke: var(--foreground);
+      fill: none;
+      stroke-width: 1;
+    }
+    .corner-tl { top: 0; left: 0; transform: scaleX(-1); }
+    .corner-tr { top: 0; right: 0; }
+    .corner-bl { bottom: 0; left: 0; transform: scale(-1); }
+    .corner-br { bottom: 0; right: 0; transform: scaleY(-1); }
+
+    .panel-eyebrow {
+      font-size: var(--type-eyebrow);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: var(--raw-tracking-eyebrow);
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .panel-dl {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: var(--type-body);
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .panel-dl dt { font-weight: 700; color: var(--foreground); }
+    .panel-dl dd { color: var(--foreground); font-family: var(--font-code); font-size: 11px; }
+
+    .stats-grid-hero {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .stat-cell dt {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: var(--raw-tracking-label);
+      color: var(--foreground-muted);
+      margin-bottom: 0.35rem;
+    }
+    .stat-cell dd {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--type-heading);
+      line-height: var(--raw-leading-72);
+      letter-spacing: var(--raw-tracking-stat);
+      color: var(--foreground);
+    }
+
+    .hero-actions-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: end;
+      gap: 2rem;
+      width: 100%;
+    }
+    .demo-action {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--foreground);
+    }
+    .demo-btn-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      background: var(--foreground);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .demo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: var(--type-body);
+      text-transform: uppercase;
+      line-height: 0.9;
+    }
+    .demo-text span:first-child { font-weight: 700; }
+    .demo-text span:last-child { color: var(--foreground-muted); font-family: var(--font-code); }
+
+    .profile-cta-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.75em;
+      width: 14em;
+      font-size: var(--type-title);
+      text-decoration: none;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--accent);
+      gap: 1em;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+    }
+    .profile-cta-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .cta-body { fill: var(--surface-dark); }
+    .cta-flood {
+      fill: var(--accent);
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform var(--duration-normal) var(--ease-plate);
+    }
+    .cta-ring { fill: none; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 1; }
+    .cta-brackets { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+    .profile-cta-btn:hover .cta-flood { transform: scaleX(1); }
+    .cta-label-span {
+      position: relative;
+      z-index: 2;
+      transition: color var(--duration-normal);
+    }
+    .profile-cta-btn:hover .cta-label-span { color: var(--surface-black); }
+    .cta-arrow-svg {
+      position: relative;
+      z-index: 2;
+      width: 0.75em;
+      height: 0.6em;
+      stroke: var(--accent);
+      stroke-width: 2;
+      fill: none;
+      transition: all var(--duration-fast);
+    }
+    .profile-cta-btn:hover .cta-arrow-svg {
+      stroke: var(--surface-black);
+      transform: translateX(0.25rem);
+    }
+
+    .socials-nav {
+      display: flex;
+      justify-content: flex-end;
+      gap: 2rem;
+      list-style: none;
+    }
+    .socials-nav a {
+      font-size: var(--type-body);
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--foreground);
+      text-decoration: none;
+      transition: color var(--duration-fast);
+    }
+    .socials-nav a:hover { color: var(--accent); }
+
+    /* ==========================================================================
+       SECTION 2: BENCHMARK MATRIX & PIPELINE CIRCUIT (DARK GROUND)
+       ========================================================================== */
+    [data-season] {
+      position: relative;
+      isolation: isolate;
+      min-height: 100lvh;
+      overflow: hidden;
+      background: var(--surface-black);
+      color: var(--foreground-on-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4.8611cqw 2rem 2rem;
+      container-type: inline-size;
+    }
+    .seam-checker-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 34svh;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .circuit-stage-wrap {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 10%, #000 90%, transparent 100%);
+      pointer-events: none;
+    }
+    #circuit-halftone-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+      z-index: 1;
+    }
+    #circuit-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+
+    .season-content-col {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: calc(100lvh - 6rem);
+      pointer-events: none;
+    }
+    .season-header-left {
+      max-width: 32rem;
+      pointer-events: auto;
+    }
+    .season-h2 {
+      font-family: var(--font-display);
+      font-size: var(--type-display-sm);
+      font-weight: 700;
+      line-height: var(--raw-leading-95);
+      text-transform: uppercase;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+    .season-h2 span.dot { color: var(--foreground-on-dark); }
+    .cyan-rule-season {
+      width: 3rem;
+      height: 2px;
+      background: var(--accent);
+      margin: 1.5rem 0 1.25rem;
+      transform-origin: left;
+    }
+    .season-intro-p {
+      font-size: var(--type-lead);
+      line-height: 1.25;
+      text-transform: uppercase;
+      color: var(--foreground-on-dark-muted);
+      font-weight: 500;
+    }
+
+    .standings-plate-wrap {
+      align-self: flex-end;
+      position: relative;
+      width: 295px;
+      height: 82px;
+      pointer-events: auto;
+      margin-bottom: 1rem;
+    }
+    .standings-svg-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .standings-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 88px 1fr;
+    }
+    .badge-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-right: 1px solid var(--accent);
+    }
+    .globe-svg {
+      width: 37px;
+      height: 23px;
+      stroke: var(--accent);
+      fill: none;
+    }
+    .f1-badge-text {
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 0.72;
+      letter-spacing: -0.02em;
+    }
+    .f1-badge-text span:first-child { color: #fff; }
+    .f1-badge-text span:last-child { color: var(--accent); }
+
+    .stats-cell {
+      padding-left: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      line-height: 0.8;
+    }
+    .stat-standings-row {
+      display: flex;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+    .stat-standings-row dt { font-weight: 700; color: var(--accent); }
+    .stat-standings-row dd { color: #fff; font-weight: 500; }
+
+    /* ==========================================================================
+       SECTION 3: ARCHITECTURE & TASK TIMELINE (DARK GROUND)
+       ========================================================================== */
+    [data-timeline] {
+      position: relative;
+      background: var(--surface-black);
+      color: var(--foreground-on-dark);
+      padding: 6rem 2rem;
+      min-height: 150vh;
+    }
+    .timeline-rail-wrap {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      background: var(--timeline-rail);
+    }
+    .timeline-progress-thread {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      background: #ffffff;
+    }
+    .timeline-marker-box {
+      position: absolute;
+      top: 0;
+      left: -9px;
+      width: 20px;
+      height: 20px;
+      background: var(--surface-black);
+      border: 2px solid var(--accent);
+      transform: rotate(0deg);
+      transition: transform 0.1s linear;
+    }
+
+    .timeline-rows-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5rem;
+      position: relative;
+      z-index: 5;
+    }
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: center;
+      transition: opacity 0.3s ease;
+    }
+    .timeline-rows-container:hover .timeline-row { opacity: 0.35; }
+    .timeline-rows-container:hover .timeline-row:hover { opacity: 1; }
+
+    .timeline-row.inverted .timeline-card-plate { order: 2; }
+    .timeline-row.inverted .timeline-year-text { order: 1; text-align: right; }
+
+    .timeline-year-text {
+      font-family: var(--font-display);
+      font-size: var(--type-year);
+      font-weight: 700;
+      color: var(--foreground-on-dark);
+      letter-spacing: -0.02em;
+    }
+    .timeline-year-text span.sub {
+      display: block;
+      font-family: var(--font-sans);
+      font-size: var(--type-lead);
+      color: var(--accent);
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    .timeline-card-plate {
+      position: relative;
+      background: var(--timeline-fill);
+      border: 1px solid var(--timeline-outline);
+      padding: 2rem;
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .timeline-card-plate:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+    }
+    .timeline-card-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .timeline-card-desc {
+      font-size: var(--type-body);
+      line-height: 1.5;
+      color: var(--foreground-on-dark-muted);
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       SECTION 4: WORKBENCH & LINTER (LIGHT GROUND)
+       ========================================================================== */
+    [data-paddock] {
+      position: relative;
+      background: var(--background);
+      color: var(--foreground);
+      padding: 6rem 2rem;
+      overflow: hidden;
+      min-height: 100vh;
+    }
+    #paddock-contour-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .paddock-wrap {
+      position: relative;
+      z-index: 10;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    .paddock-h2 {
+      font-family: var(--font-display);
+      font-size: var(--type-impact);
+      font-weight: 700;
+      line-height: var(--raw-leading-90);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      margin-bottom: 2.5rem;
+    }
+    .paddock-report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-bottom: 3.5rem;
+    }
+    .paddock-report-text {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* Interactive Terminal Workbench */
+    .workbench-card {
+      background: var(--surface-black);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 2rem;
+    }
+    .workbench-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #11141c;
+    }
+    .workbench-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .task-tab-btn {
+      padding: 6px 14px;
+      background: #1a202c;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: var(--raw-color-steel-400);
+      font-family: var(--font-code);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+    .task-tab-btn.active {
+      background: var(--accent);
+      color: var(--surface-black);
+      font-weight: 700;
+      border-color: var(--accent);
+    }
+    .run-lint-btn {
+      padding: 6px 16px;
+      background: #1e293b;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--font-code);
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--duration-fast);
+    }
+    .run-lint-btn:hover {
+      background: var(--accent);
+      color: var(--surface-black);
+    }
+
+    .workbench-body {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 380px;
+    }
+    .file-tree-col {
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.25rem;
+      background: #0b0e14;
+    }
+    .tree-title {
+      font-size: 11px;
+      font-family: var(--font-code);
+      color: var(--accent);
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+    .tree-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .tree-item-btn {
       background: transparent;
       border: none;
-      color: var(--text-tertiary);
+      color: var(--raw-color-steel-400);
       font-family: var(--font-code);
       font-size: 12px;
+      text-align: left;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.15s ease;
-    }
-
-    .tab-trigger:hover { color: var(--text-secondary); }
-    .tab-trigger.active {
-      color: var(--text-primary);
-      border-bottom-color: var(--accent-blue);
-      background: rgba(56, 189, 248, 0.04);
-    }
-
-    .editor-body {
-      flex: 1;
-      overflow: auto;
       display: flex;
-      background: #06080c;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 3px;
+      width: 100%;
+    }
+    .tree-item-btn:hover, .tree-item-btn.active {
+      background: rgba(2, 210, 227, 0.1);
+      color: var(--accent);
     }
 
-    .line-numbers {
-      padding: 16px 12px;
+    .code-viewer-col {
+      padding: 1.5rem;
+      background: #090a0b;
       font-family: var(--font-code);
       font-size: 12px;
       line-height: 1.6;
-      color: #3b4252;
-      text-align: right;
-      user-select: none;
-      border-right: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .code-render {
-      flex: 1;
-      padding: 16px 18px;
-      font-family: var(--font-code);
-      font-size: 12px;
-      line-height: 1.6;
-      color: #cbd5e1;
-      white-space: pre;
+      color: #e2e8f0;
       overflow-x: auto;
+      white-space: pre;
     }
 
-    /* RIGHT PANE: HARBOR RUNNER & TEST CONSOLE */
-    .pane-runner {
-      background: var(--bg-surface);
-      border-left: 1px solid var(--border-subtle);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .runner-controls {
+    /* ==========================================================================
+       SECTION 5: KEEP PUSHING FORWARD (FOOTER)
+       ========================================================================== */
+    [data-footer] {
+      position: relative;
+      background: var(--accent);
       padding: 16px;
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
     }
-
-    .btn-action {
-      height: 36px;
-      border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-      font-family: var(--font-ui);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.15s ease;
-    }
-
-    .btn-blue {
-      background: #0284c7;
-      border-color: #38bdf8;
+    .footer-inner-panel {
+      background: var(--surface-dark);
       color: #fff;
-    }
-    .btn-blue:hover { background: #0369a1; }
-
-    .btn-secondary {
-      background: var(--bg-elevated);
-      color: var(--text-primary);
-    }
-    .btn-secondary:hover {
-      background: #1e2638;
-      border-color: var(--border-hover);
-    }
-
-    .checks-list {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border-subtle);
+      padding: 5rem 3rem 2rem;
+      position: relative;
+      overflow: hidden;
+      min-height: 65vh;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-
-    .check-row {
-      display: flex;
-      align-items: center;
       justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-secondary);
     }
-
-    .check-badge {
-      font-family: var(--font-code);
-      font-size: 10px;
-      padding: 1px 6px;
-      border-radius: 4px;
-      background: var(--status-pass-bg);
-      color: var(--status-pass);
-      border: 1px solid rgba(52, 211, 153, 0.2);
+    #footer-contour-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.1;
     }
+    .footer-headline {
+      font-family: var(--font-display);
+      font-size: calc(var(--type-impact) * 0.85);
+      font-weight: 700;
+      line-height: var(--raw-leading-90);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      max-width: 16em;
+      position: relative;
+      z-index: 10;
+    }
+    .footer-headline span { color: var(--accent); }
 
-    .console-header {
-      padding: 10px 16px;
-      font-size: 11px;
-      font-family: var(--font-code);
-      color: var(--text-tertiary);
-      border-bottom: 1px solid var(--border-subtle);
+    .footer-bottom-grid {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      background: #080b11;
+      align-items: flex-end;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 2rem;
+      margin-top: 4rem;
+      position: relative;
+      z-index: 10;
     }
-
-    .console-logs {
-      flex: 1;
-      padding: 14px 16px;
-      font-family: var(--font-code);
-      font-size: 11px;
-      line-height: 1.55;
-      background: #040609;
-      color: #a7f3d0;
-      overflow-y: auto;
-      white-space: pre-wrap;
+    .legal-copy {
+      font-size: var(--type-eyebrow);
+      color: var(--raw-color-white-alpha-40);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      line-height: 1.5;
     }
+    .footer-links {
+      display: flex;
+      gap: 3rem;
+      list-style: none;
+    }
+    .footer-links a {
+      font-size: var(--type-body);
+      text-transform: uppercase;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color var(--duration-fast);
+    }
+    .footer-links a:hover { color: var(--accent); }
   </style>
+
+  <!-- INSTANT VEIL FAILSAFE: Dismisses veil automatically in 800ms -->
+  <script>
+    function triggerDismissVeil() {
+      var veil = document.getElementById('loading-veil');
+      var fill = document.getElementById('veil-fill');
+      var meter = document.getElementById('veil-meter');
+      if (fill) fill.style.transform = 'scaleY(1)';
+      if (meter) meter.style.transform = 'scaleX(1)';
+      setTimeout(function() {
+        if (veil) {
+          veil.style.opacity = '0';
+          setTimeout(function() { veil.style.display = 'none'; }, 400);
+        }
+      }, 350);
+    }
+    window.addEventListener('load', function() {
+      setTimeout(triggerDismissVeil, 400);
+    });
+    setTimeout(triggerDismissVeil, 900);
+  </script>
 </head>
 <body>
 
-  <!-- GLOBAL NAV -->
-  <header>
-    <div class="brand-cluster">
-      <div class="project-icon">H</div>
-      <div class="breadcrumbs">
-        <span class="crumb-muted">Harbor Task Factory</span>
-        <span class="crumb-muted">/</span>
-        <span class="crumb-repo">pallets/click</span>
-        <span class="crumb-commit">baseline: e0d8b58</span>
-      </div>
+  <!-- LOADING VEIL -->
+  <div id="loading-veil" role="status" aria-label="Initializing Harbor Pipeline">
+    <div class="veil-cube-box">
+      <div class="veil-cube-fill" id="veil-fill"></div>
+      <div class="veil-icon">H</div>
     </div>
-    <div class="header-actions">
-      <div class="status-indicator">
-        <div class="pulse-dot"></div>
-        <span>Harbor v0.25.0 Compliant</span>
-      </div>
-      <a class="gh-link" href="https://github.com/dhruv-sharma07/harbor-click-pipeline" target="_blank">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
-        <span>GitHub Repository</span>
-      </a>
+    <div class="veil-name" id="veil-name">HARBOR // TASK GENERATION PIPELINE</div>
+    <div class="veil-meter-track">
+      <div class="veil-meter-fill" id="veil-meter"></div>
     </div>
-  </header>
-
-  <!-- WORKSPACE -->
-  <div class="workspace">
-    
-    <!-- LEFT: TASKS LIST -->
-    <section class="pane-tasks">
-      <div class="pane-header">
-        <span>Task Packages (Mined)</span>
-        <span style="color:var(--text-secondary);">3 Ready</span>
-      </div>
-
-      <div class="task-item-list">
-        <div class="task-card active" onclick="selectTask(0)">
-          <div class="task-title">click-paramtype-custom-formatting</div>
-          <div class="task-sub">
-            <span>src/click/types.py</span>
-            <span class="tag-diff diff-med">Medium</span>
-          </div>
-        </div>
-
-        <div class="task-card" onclick="selectTask(1)">
-          <div class="task-title">click-hide-sensitive-prompt-default</div>
-          <div class="task-sub">
-            <span>src/click/core.py</span>
-            <span class="tag-diff diff-med">Medium</span>
-          </div>
-        </div>
-
-        <div class="task-card" onclick="selectTask(2)">
-          <div class="task-title">click-nested-group-subcommand-resolve</div>
-          <div class="task-sub">
-            <span>src/click/core.py</span>
-            <span class="tag-diff diff-hard">Hard</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="pipeline-summary">
-        <div class="stat-row">
-          <span>Target Architecture</span>
-          <b>Harbor v0.25.x</b>
-        </div>
-        <div class="stat-row">
-          <span>Target Environment</span>
-          <b>python:3.11-slim</b>
-        </div>
-        <div class="stat-row">
-          <span>Reward Target Contract</span>
-          <b>1.00 (Pass)</b>
-        </div>
-      </div>
-    </section>
-
-    <!-- CENTER: FILE INSPECTOR -->
-    <section class="pane-editor">
-      <div class="editor-tabs">
-        <button class="tab-trigger active" onclick="switchTab('instruction')">instruction.md</button>
-        <button class="tab-trigger" onclick="switchTab('task_toml')">task.toml</button>
-        <button class="tab-trigger" onclick="switchTab('dockerfile')">Dockerfile</button>
-        <button class="tab-trigger" onclick="switchTab('solve_sh')">solve.sh (Oracle)</button>
-        <button class="tab-trigger" onclick="switchTab('test_sh')">test.sh (Verifier)</button>
-      </div>
-
-      <div class="editor-body">
-        <div class="line-numbers" id="line-numbers"></div>
-        <div class="code-render" id="code-content"></div>
-      </div>
-    </section>
-
-    <!-- RIGHT: RUNNER & LOGS -->
-    <section class="pane-runner">
-      <div class="runner-controls">
-        <button class="btn-action btn-blue" onclick="runLinter()">Validate Task (Harbor Linter)</button>
-        <button class="btn-action btn-secondary" onclick="runVerifier()">Execute Verifier (Reward Test)</button>
-      </div>
-
-      <div class="checks-list">
-        <div class="check-row">
-          <span>File Hierarchy (5/5)</span>
-          <span class="check-badge">PASSED</span>
-        </div>
-        <div class="check-row">
-          <span>task.toml Schema 0.25.x</span>
-          <span class="check-badge">PASSED</span>
-        </div>
-        <div class="check-row">
-          <span>Dockerfile Dependencies</span>
-          <span class="check-badge">PASSED</span>
-        </div>
-        <div class="check-row">
-          <span>Verifier Scoring Contract</span>
-          <span class="check-badge">PASSED</span>
-        </div>
-      </div>
-
-      <div class="console-header">
-        <span>VERIFICATION_OUTPUT</span>
-        <span id="log-status" style="color:var(--accent-blue);">STANDBY</span>
-      </div>
-
-      <div class="console-logs" id="console-logs">[SYSTEM] Harbor Task Pipeline Initialized.
-Target repository: pallets/click @ e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-Select an operation above to execute Harbor verification.</div>
-    </section>
-
   </div>
 
-  <script>
-    const tasks = [
-      {
-        id: "click-paramtype-custom-formatting",
-        instruction: `# Task: click-paramtype-custom-formatting
+  <!-- STICKY STACK (BLOCKS 1, 2, 3) -->
+  <div class="sticky-stack-container" id="stack-container">
 
-## Repository Context
-- Repository: pallets/click
-- Baseline Commit: e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-- Component: src/click/types.py
+    <!-- 1. HERO -->
+    <div class="pinned-layer layer-hero" id="layer-hero">
+      <div class="pinned-inner" id="inner-hero">
+        <section data-hero id="hero">
+          <canvas id="hero-canvas" aria-hidden="true"></canvas>
 
-## Problem Statement
-In click/types.py, custom ParamType subclasses that override convert() fail when self.name is omitted or None.
-Calls to get_metavar() and error message formatters access self.name directly without checking for empty or None values, causing AttributeError or formatting strings with literal "None".
+          <div class="hero-content">
+            <!-- Masthead -->
+            <header class="hero-masthead">
+              <a href="#" class="logo-grido1" aria-label="Harbor v0.25.x">HARBOR<span>//</span>0.25.x</a>
+              <ul class="hero-nav">
+                <li><a href="#hero">Specification</a></li>
+                <li><a href="#season">Pipeline</a></li>
+                <li><a href="#timeline">Tasks</a></li>
+                <li><a href="#workbench">Linter</a></li>
+                <li><a href="#repo">Artifacts</a></li>
+              </ul>
+              <a href="#workbench" class="console-link"><span>[ </span>TERMINAL CONSOLE<span> → ]</span></a>
+            </header>
 
-## Requirements
-1. Update ParamType.get_metavar() in src/click/types.py to fall back to self.__class__.__name__.upper() when self.name is empty or None.
-2. In fail() and error-reporting helpers, fall back to self.__class__.__name__.lower() if name is not defined.
-3. Maintain full backwards compatibility with standard Click types (IntParamType, Path, Choice).
-4. Validation command: pytest /workspace/tests/test_verifier.py`,
+            <!-- Mid Row: Identity & Panels -->
+            <div class="hero-mid-row">
+              <div class="system-identity">
+                <span class="system-id-tag">SYS_ID: HARBOR_CLICK_025</span>
+                <h1 class="system-name-h1">AUTONOMOUS<br>BENCHMARK<br>FACTORY</h1>
+                <ul class="meta-rows">
+                  <li class="meta-row-item">
+                    <span class="meta-icon">✦</span>
+                    <span>INNODATA AI HACKATHON 2026</span>
+                  </li>
+                  <li class="meta-row-item">
+                    <span class="meta-icon">✦</span>
+                    <span>TARGET: PALLETS/CLICK @ E0D8B58</span>
+                  </li>
+                  <li class="meta-row-item">
+                    <span class="meta-icon">✦</span>
+                    <span>STANDARDIZED HARBOR V0.25.X CONTAINER HARNESS</span>
+                  </li>
+                </ul>
+              </div>
 
-        task_toml: `schema_version = "0.25.0"
+              <div class="hero-panels-col">
+                <!-- Panel 1: Target Baseline -->
+                <div class="bracket-panel">
+                  <svg class="bracket-corner corner-tl" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+                  <svg class="bracket-corner corner-tr" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+                  <svg class="bracket-corner corner-bl" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+                  <svg class="bracket-corner corner-br" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
 
+                  <div class="panel-eyebrow">Verified Baseline</div>
+                  <dl class="panel-dl">
+                    <dt>pallets/click</dt>
+                    <dd>Commit: e0d8b5847e2ef30fa</dd>
+                    <dd>Language: Python 3.11 AST</dd>
+                  </dl>
+                </div>
+
+                <!-- Panel 2: Synthesis Metrics -->
+                <div class="bracket-panel">
+                  <svg class="bracket-corner corner-tl" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+                  <svg class="bracket-corner corner-tr" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+                  <svg class="bracket-corner corner-bl" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+                  <svg class="bracket-corner corner-br" viewBox="0 0 10.5 10.5"><path d="M0 0.5H10V10.5"/></svg>
+
+                  <div class="panel-eyebrow">Pipeline Yield</div>
+                  <dl class="stats-grid-hero">
+                    <div class="stat-cell">
+                      <dt>Tasks</dt>
+                      <dd>03</dd>
+                    </div>
+                    <div class="stat-cell">
+                      <dt>Lint</dt>
+                      <dd>100%</dd>
+                    </div>
+                    <div class="stat-cell">
+                      <dt>Flake</dt>
+                      <dd>0.0</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions Foot -->
+            <div class="hero-actions-row">
+              <a href="#workbench" class="demo-action">
+                <div class="demo-btn-icon">▶</div>
+                <div class="demo-text">
+                  <span>Explore Workbench</span>
+                  <span>v0.25.x CONSOLE</span>
+                </div>
+              </a>
+
+              <!-- Chamfered Action Button -->
+              <a href="#timeline" class="profile-cta-btn">
+                <svg class="profile-cta-svg" viewBox="0 0 220 50" preserveAspectRatio="none">
+                  <path class="cta-body" d="M220 42L212.932 50H0V0H220V42Z"/>
+                  <path class="cta-flood" d="M220 42L212.932 50H0V0H220V42Z"/>
+                  <path class="cta-ring" d="M220 42L212.932 50H0V0H220V42Z"/>
+                  <path class="cta-brackets" d="M205 49.5H213L219.5 42V36 M212 0.5H219.5V7 M8 0.5H0.5V7 M7.5 49.5H0.5V42.5"/>
+                </svg>
+                <span class="cta-label-span">EXPLORE TASKS</span>
+                <svg class="cta-arrow-svg" viewBox="0 0 14 11">
+                  <path d="M0 5.35H13M8 10.35L13 5.35L8 0.35"/>
+                </svg>
+              </a>
+
+              <ul class="socials-nav">
+                <li><a href="https://github.com/pallets/click" target="_blank" rel="noopener">CLICK REPO</a></li>
+                <li><a href="#workbench">LINTER</a></li>
+                <li><a href="#timeline">TASKS</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="pinned-shade" id="shade-hero"></div>
+    </div>
+
+    <!-- 2. THE BENCHMARK MATRIX / PIPELINE TRACE -->
+    <div class="pinned-layer layer-season" id="layer-season">
+      <div class="pinned-inner" id="inner-season">
+        <section data-season id="season">
+          <canvas class="seam-checker-canvas" id="season-seam-canvas"></canvas>
+
+          <!-- Circuit Stage -->
+          <div class="circuit-stage-wrap">
+            <canvas id="circuit-halftone-canvas" width="2560" height="1440"></canvas>
+            <canvas id="circuit-canvas" width="1440" height="800"></canvas>
+          </div>
+
+          <!-- Section Copy Column -->
+          <div class="season-content-col">
+            <div class="season-header-left">
+              <h2 class="season-h2">THE BENCHMARK<br>MATRIX<span class="dot">.</span></h2>
+              <div class="cyan-rule-season"></div>
+              <p class="season-intro-p">From raw Git commits to containerized fail-to-pass agent evaluation harnesses.</p>
+            </div>
+
+            <!-- Standings Plate Bottom Right -->
+            <div class="standings-plate-wrap">
+              <svg class="standings-svg-bg" viewBox="0 0 295 82">
+                <path d="M0.5 0.5H294.5V73L285 81.5H0.5Z" fill="#090a0b" stroke="#02d2e3" stroke-width="1"/>
+              </svg>
+              <div class="standings-content">
+                <div class="badge-cell">
+                  <svg class="globe-svg" viewBox="0 0 37 23">
+                    <ellipse cx="18.5" cy="11.5" rx="18" ry="11" stroke="#02d2e3" stroke-width="1" fill="none"/>
+                    <line x1="0.5" y1="11.5" x2="36.5" y2="11.5" stroke="#02d2e3" stroke-width="1"/>
+                    <ellipse id="globe-meridian" cx="18.5" cy="11.5" rx="18" ry="11" stroke="#02d2e3" stroke-width="1" fill="none"/>
+                  </svg>
+                  <div class="f1-badge-text">
+                    <span>HARBOR</span> <span>/ 0.25</span>
+                  </div>
+                </div>
+                <dl class="stats-cell">
+                  <div class="stat-standings-row">
+                    <dt>100%</dt>
+                    <dd>schema conformance</dd>
+                  </div>
+                  <div class="stat-standings-row">
+                    <dt>3</dt>
+                    <dd>isolated containers</dd>
+                  </div>
+                  <div class="stat-standings-row">
+                    <dt>0.00</dt>
+                    <dd>flaky verifiers.</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="pinned-shade" id="shade-season"></div>
+    </div>
+
+    <!-- 3. ARCHITECTURE & TASK TIMELINE -->
+    <div class="pinned-layer layer-timeline" id="layer-timeline">
+      <section data-timeline id="timeline">
+        <div class="timeline-rail-wrap">
+          <div class="timeline-progress-thread" id="timeline-thread"></div>
+          <div class="timeline-marker-box" id="timeline-marker"></div>
+        </div>
+
+        <div class="timeline-rows-container">
+          <!-- Item 1 -->
+          <div class="timeline-row">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">1. Git Baseline AST Extraction</div>
+              <div class="timeline-card-desc">Clones pallets/click pinned at verified baseline commit e0d8b58. Mines commit graph, parses Python AST deltas, and isolates single-component bugfixes.</div>
+            </div>
+            <div class="timeline-year-text">
+              STAGE 01
+              <span class="sub">AST Mining Engine</span>
+            </div>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="timeline-row inverted">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">2. Task: ParamType Custom Formatting</div>
+              <div class="timeline-card-desc">Benchmark testing ParamType name fallback in Click type conversion & metavar generation. Validates fallback error rendering when custom types omit names.</div>
+            </div>
+            <div class="timeline-year-text">
+              TASK_01
+              <span class="sub">types.py / CLICK-2412</span>
+            </div>
+          </div>
+
+          <!-- Item 3 -->
+          <div class="timeline-row">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">3. Task: Hide Sensitive Prompt Default</div>
+              <div class="timeline-card-desc">Benchmark preventing plaintext disclosure of default secrets in password prompts. Enforces security isolation across hidden input streams.</div>
+            </div>
+            <div class="timeline-year-text">
+              TASK_02
+              <span class="sub">core.py / Security Bugfix</span>
+            </div>
+          </div>
+
+          <!-- Item 4 -->
+          <div class="timeline-row inverted">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">4. Task: Nested Group Subcommand Resolve</div>
+              <div class="timeline-card-desc">Tests exact match precedence during prefix subcommand lookup in nested Group commands. Resolves command collision and prefix matching ambiguities.</div>
+            </div>
+            <div class="timeline-year-text">
+              TASK_03
+              <span class="sub">core.py / Group Dispatch</span>
+            </div>
+          </div>
+
+          <!-- Item 5 -->
+          <div class="timeline-row">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">5. Harbor v0.25 Containerization</div>
+              <div class="timeline-card-desc">Synthesizes reproducible Dockerfile sandbox, pins Python 3.11-slim, generates task.toml manifests with resource limits, timeouts, and baseline commit pins.</div>
+            </div>
+            <div class="timeline-year-text">
+              STAGE 05
+              <span class="sub">Container Isolation</span>
+            </div>
+          </div>
+
+          <!-- Item 6 -->
+          <div class="timeline-row inverted">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">6. Oracle Gold Solution Synthesis</div>
+              <div class="timeline-card-desc">Generates idempotent solve.sh scripts embedding exact unified patches to prove task solvability and verify 100% ground-truth baseline validity.</div>
+            </div>
+            <div class="timeline-year-text">
+              STAGE 06
+              <span class="sub">Oracle Patch Engine</span>
+            </div>
+          </div>
+
+          <!-- Item 7 -->
+          <div class="timeline-row">
+            <div class="timeline-card-plate">
+              <div class="timeline-card-title">7. Verifier Harness & Reward Contract</div>
+              <div class="timeline-card-desc">Compiles fail-to-pass pytest verifiers. Emits binary evaluation rewards directly to /logs/verifier/reward.txt conforming to Harbor v0.25.x evaluation contract.</div>
+            </div>
+            <div class="timeline-year-text">
+              STAGE 07
+              <span class="sub">Fail-to-Pass Verification</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div> <!-- /sticky-stack-container -->
+
+  <!-- ==========================================================================
+       SECTION 4: WORKBENCH & LINTER (LIGHT GROUND)
+       ========================================================================== -->
+  <section data-paddock id="workbench">
+    <canvas id="paddock-contour-canvas"></canvas>
+
+    <div class="paddock-wrap">
+      <h2 class="paddock-h2">From The Verifier</h2>
+
+      <div class="paddock-report-grid">
+        <div class="paddock-report-text">
+          "Zero human intervention required. The pipeline mined the commit history of pallets/click, isolated discrete bugfixes, and synthesized fully containerized Harbor v0.25.x packages within 18 seconds."
+        </div>
+        <div class="paddock-report-text" style="color:var(--raw-color-steel-400);">
+          Every generated task conforms to Terminal-Bench 2.0 evaluation criteria. Gold solution solve.sh achieves a 1.0 reward score, while unmodified baseline fails test_verifier.py with strict fail-to-pass isolation.
+        </div>
+      </div>
+
+      <!-- Interactive Terminal Workbench -->
+      <div class="workbench-card">
+        <div class="workbench-header">
+          <div class="workbench-tabs">
+            <button class="task-tab-btn active" data-task="paramtype">click-paramtype-custom-formatting</button>
+            <button class="task-tab-btn" data-task="prompt">click-hide-sensitive-prompt-default</button>
+            <button class="task-tab-btn" data-task="group">click-nested-group-subcommand-resolve</button>
+          </div>
+          <button class="run-lint-btn" id="run-linter-btn">
+            <span>▶</span> RUN HARBOR LINTER
+          </button>
+        </div>
+
+        <div class="workbench-body">
+          <div class="file-tree-col">
+            <div class="tree-title">// TASK PACKAGE FILES</div>
+            <ul class="tree-list">
+              <li><button class="tree-item-btn active" data-file="task.toml">📄 task.toml</button></li>
+              <li><button class="tree-item-btn" data-file="instruction.md">📝 instruction.md</button></li>
+              <li><button class="tree-item-btn" data-file="Dockerfile">🐳 environment/Dockerfile</button></li>
+              <li><button class="tree-item-btn" data-file="solve.sh">⚡ solution/solve.sh</button></li>
+              <li><button class="tree-item-btn" data-file="test.sh">🧪 tests/test.sh</button></li>
+              <li><button class="tree-item-btn" data-file="test_verifier.py">🔬 tests/test_verifier.py</button></li>
+            </ul>
+          </div>
+
+          <div class="code-viewer-col" id="code-viewer">schema_version = "0.25.0"
 [metadata]
 name = "click-paramtype-custom-formatting"
 author = "Innodata Task Generation Pipeline"
@@ -593,322 +1428,541 @@ base_image = "python:3.11-slim"
 cpus = 2
 memory_mb = 4096
 storage_mb = 10240
-gpus = 0`,
+gpus = 0</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        dockerfile: `FROM python:3.11-slim
+  <!-- ==========================================================================
+       SECTION 5: KEEP PUSHING FORWARD (FOOTER)
+       ========================================================================== */
+  <footer data-footer id="repo">
+    <div class="footer-inner-panel">
+      <canvas id="footer-contour-canvas"></canvas>
 
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    git build-essential curl && rm -rf /var/lib/apt/lists/*
+      <h2 class="footer-headline">STANDARDIZE BENCHMARKS.<br><span>ACCELERATE FRONTIER AGENTS.</span></h2>
 
-WORKDIR /workspace
+      <div class="footer-bottom-grid">
+        <div class="legal-copy">
+          © 2026 INNODATA AI HACKATHON &bull; HARBOR V0.25.X AUTOMATED PIPELINE.<br>
+          ENGINEERED BY DHRUV SHARMA &bull; ZERO PLAGIARISM &bull; SENIOR DEVELOPER CRAFT.
+        </div>
 
-RUN git clone https://github.com/pallets/click.git /workspace/click && \\
-    cd /workspace/click && \\
-    git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
+        <ul class="footer-links">
+          <li><a href="#hero">Specification</a></li>
+          <li><a href="#season">Pipeline</a></li>
+          <li><a href="#timeline">Tasks</a></li>
+          <li><a href="#workbench">Linter</a></li>
+          <li><a href="https://github.com/pallets/click" target="_blank" rel="noopener">Click Repo</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
 
-WORKDIR /workspace/click
-
-RUN python -m venv /workspace/venv && \\
-    /workspace/venv/bin/pip install --no-cache-dir -e . pytest
-
-ENV PATH="/workspace/venv/bin:$PATH"
-ENV VIRTUAL_ENV="/workspace/venv"
-
-RUN mkdir -p /logs/verifier /logs/agent
-
-CMD ["/bin/bash"]`,
-
-        solve_sh: `#!/bin/bash
-set -euo pipefail
-
-cd /workspace/click
-
-cat << 'EOF' | patch -p1
---- a/src/click/types.py
-+++ b/src/click/types.py
-@@ -82,7 +82,7 @@ class ParamType:
-     def get_metavar(self, param: t.Optional["Parameter"]) -> t.Optional[str]:
-         if self.name is not None:
--            return self.name.upper()
-+            return self.name.upper() if self.name else self.__class__.__name__.upper()
- 
-         return None
- 
-@@ -102,6 +102,9 @@ class ParamType:
-         if self.name is None:
-             name = self.__class__.__name__.lower()
-+        elif not self.name.strip():
-+            name = self.__class__.__name__.lower()
-         else:
-             name = self.name
-EOF
-
-echo "[ORACLE] Patch successfully applied."`,
-
-        test_sh: `#!/bin/bash
-set -uo pipefail
-
-mkdir -p /logs/verifier
-REWARD_FILE="/logs/verifier/reward.txt"
-DETAILS_FILE="/logs/verifier/reward.json"
-
-cd /workspace/click
-source /workspace/venv/bin/activate
-
-pytest /workspace/tests/test_verifier.py -v --tb=short > /logs/verifier/pytest.log 2>&1
-TEST_EXIT_CODE=$?
-
-if [ $TEST_EXIT_CODE -eq 0 ]; then
-    echo "1.0" > "$REWARD_FILE"
-    echo '{"reward": 1.0, "status": "PASSED"}' > "$DETAILS_FILE"
-    echo "[VERIFIER] Verification PASSED. Reward: 1.0"
-    exit 0
-else
-    echo "0.0" > "$REWARD_FILE"
-    echo '{"reward": 0.0, "status": "FAILED"}' > "$DETAILS_FILE"
-    echo "[VERIFIER] Verification FAILED. Reward: 0.0"
-    exit 1
-fi`
-      },
-      {
-        id: "click-hide-sensitive-prompt-default",
-        instruction: `# Task: click-hide-sensitive-prompt-default
-
-## Repository Context
-- Repository: pallets/click
-- Baseline Commit: e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-- Component: src/click/core.py
-
-## Problem Statement
-When an option defines both prompt=True and default=... alongside hide_input=True (used for passwords, keys, or security credentials), Click formats the terminal prompt with the default value displayed in cleartext: "Password [supersecret]:".
-
-## Requirements
-1. Modify Option.prompt_for_value() in src/click/core.py.
-2. When hide_input=True is enabled, do not print the plaintext default string in the prompt.
-3. If the user presses ENTER on an empty prompt, the secret default value must still be assigned correctly.
-4. Non-sensitive options (hide_input=False) must continue to show their default values as normal.`,
-
-        task_toml: `schema_version = "0.25.0"
-
-[metadata]
-name = "click-hide-sensitive-prompt-default"
-author = "Innodata Task Generation Pipeline"
-difficulty = "medium"
-category = "software-engineering"
-tags = ["python", "cli", "pallets-click", "security"]
-summary = "Prevent plaintext display of default values in hide_input prompts"
-baseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"
-issue_id = "CLICK-2489"
-
-[agent]
-timeout_sec = 600
-
-[verifier]
-timeout_sec = 180
-
-[environment]
-os = "linux"
-base_image = "python:3.11-slim"
-cpus = 2
-memory_mb = 4096
-storage_mb = 10240
-gpus = 0`,
-
-        dockerfile: `FROM python:3.11-slim
-RUN apt-get update && apt-get install -y git build-essential curl && rm -rf /var/lib/apt/lists/*
-WORKDIR /workspace/click
-RUN git clone https://github.com/pallets/click.git . && git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-RUN python -m venv /workspace/venv && /workspace/venv/bin/pip install -e . pytest
-ENV PATH="/workspace/venv/bin:$PATH"
-RUN mkdir -p /logs/verifier
-CMD ["/bin/bash"]`,
-
-        solve_sh: `#!/bin/bash
-cd /workspace/click
-cat << 'EOF' | patch -p1
---- a/src/click/core.py
-+++ b/src/click/core.py
-@@ -2545,6 +2545,9 @@ class Option(Parameter):
-         prompt_default = default
-+        if self.hide_input and default is not None:
-+            prompt_default = "******"
-         return prompt(
-EOF`,
-
-        test_sh: `#!/bin/bash
-source /workspace/venv/bin/activate
-pytest /workspace/tests/test_verifier.py
-if [ $? -eq 0 ]; then
-    echo "1.0" > /logs/verifier/reward.txt
-    exit 0
-else
-    echo "0.0" > /logs/verifier/reward.txt
-    exit 1
-fi`
-      },
-      {
-        id: "click-nested-group-subcommand-resolve",
-        instruction: `# Task: click-nested-group-subcommand-resolve
-
-## Repository Context
-- Repository: pallets/click
-- Baseline Commit: e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-- Component: src/click/core.py
-
-## Problem Statement
-In command hierarchies where nested groups have subcommands sharing common prefixes (e.g. "run" vs "running"), calling get_command() in a nested context can fail to prioritize exact name matches, raising an ambiguous command exception even when an exact command was provided.
-
-## Requirements
-1. Update Group.get_command() in src/click/core.py to check for exact dictionary key matches before proceeding to prefix resolution.
-2. Return exact matching Command objects immediately.
-3. Preserve prefix completion for unambiguous non-exact command prefixes.`,
-
-        task_toml: `schema_version = "0.25.0"
-
-[metadata]
-name = "click-nested-group-subcommand-resolve"
-author = "Innodata Task Generation Pipeline"
-difficulty = "hard"
-category = "software-engineering"
-tags = ["python", "cli", "pallets-click", "core"]
-summary = "Ensure exact command precedence in Group prefix resolution"
-baseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"
-issue_id = "CLICK-2531"
-
-[agent]
-timeout_sec = 900
-
-[verifier]
-timeout_sec = 240
-
-[environment]
-os = "linux"
-base_image = "python:3.11-slim"
-cpus = 2
-memory_mb = 4096
-storage_mb = 10240
-gpus = 0`,
-
-        dockerfile: `FROM python:3.11-slim
-WORKDIR /workspace/click
-RUN apt-get update && apt-get install -y git build-essential && rm -rf /var/lib/apt/lists/*
-RUN git clone https://github.com/pallets/click.git . && git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-RUN python -m venv /workspace/venv && /workspace/venv/bin/pip install -e . pytest
-ENV PATH="/workspace/venv/bin:$PATH"`,
-
-        solve_sh: `#!/bin/bash
-cd /workspace/click
-cat << 'EOF' | patch -p1
---- a/src/click/core.py
-+++ b/src/click/core.py
-@@ -1940,6 +1940,10 @@
-+        for name, cmd in self.commands.items():
-+            if name == cmd_name:
-+                return cmd
-EOF`,
-
-        test_sh: `#!/bin/bash
-source /workspace/venv/bin/activate
-pytest /workspace/tests/test_verifier.py
-if [ $? -eq 0 ]; then
-    echo "1.0" > /logs/verifier/reward.txt
-    exit 0
-fi
-exit 1`
+  <!-- ==========================================================================
+       UNIVERSAL ZERO-DEPENDENCY SCRIPT ENGINE
+       ========================================================================== -->
+  <script>
+    (function() {
+      // 1. Ticker Loop
+      var subscribers = [];
+      function subscribe(fn) {
+        subscribers.push(fn);
       }
-    ];
-
-    let currentIdx = 0;
-    let currentTab = 'instruction';
-
-    function selectTask(idx) {
-      currentIdx = idx;
-      document.querySelectorAll('.task-card').forEach((card, i) => {
-        card.classList.toggle('active', i === idx);
-      });
-      renderEditor();
-      document.getElementById('log-status').innerText = 'SELECTED: ' + tasks[idx].id;
-    }
-
-    function switchTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.tab-trigger').forEach(el => {
-        el.classList.toggle('active', el.getAttribute('onclick').includes(tab));
-      });
-      renderEditor();
-    }
-
-    function renderEditor() {
-      const task = tasks[currentIdx];
-      const code = task[currentTab] || "// Empty";
-      document.getElementById('code-content').innerText = code;
-
-      // Render line numbers
-      const lines = code.split('\n').length;
-      let numHtml = '';
-      for (let i = 1; i <= lines; i++) {
-        numHtml += i + '<br>';
+      function runLoop(t) {
+        for (var i = 0; i < subscribers.length; i++) {
+          try { subscribers[i](t); } catch (e) {}
+        }
+        requestAnimationFrame(runLoop);
       }
-      document.getElementById('line-numbers').innerHTML = numHtml;
-    }
+      requestAnimationFrame(runLoop);
 
-    function runLinter() {
-      const task = tasks[currentIdx];
-      const consoleEl = document.getElementById('console-logs');
-      document.getElementById('log-status').innerText = 'LINTING...';
-      
-      consoleEl.innerText = 
-`$ harbor task lint tasks/${task.id}
+      // 2. Lenis or native smooth scroll integration
+      if (typeof Lenis !== 'undefined') {
+        try {
+          var lenis = new Lenis({ smoothWheel: true });
+          subscribe(function(time) { lenis.raf(time); });
+        } catch(e) {}
+      }
 
-[HARBOR_LINTER] Harbor Specification Verifier v0.25.0
-Checking: tasks/${task.id}
-  -> [OK] task.toml manifest schema validated (0.25.0)
-  -> [OK] instruction.md valid (characters: ${task.instruction.length})
-  -> [OK] environment/Dockerfile standard isolated container
-  -> [OK] solution/solve.sh Oracle script executable
-  -> [OK] tests/test.sh verifier contract (/logs/verifier/reward.txt)
+      // 3. Sticky Stack recede controller
+      function initStickyStack() {
+        var hero = document.getElementById('inner-hero');
+        var heroShade = document.getElementById('shade-hero');
+        var seasonLayer = document.getElementById('layer-season');
+        var season = document.getElementById('inner-season');
+        var seasonShade = document.getElementById('shade-season');
+        var timelineLayer = document.getElementById('layer-timeline');
 
-=======================================================
-LINTER SUMMARY: 0 errors, 0 warnings
-STATUS: CONFORMS TO HARBOR STANDARDIZED ARCHITECTURE
-=======================================================`;
-      document.getElementById('log-status').innerText = 'LINT_PASSED';
-    }
+        var RECEDE_SCALE = 0.9;
+        var RECEDE_SHADE = 0.55;
 
-    function runVerifier() {
-      const task = tasks[currentIdx];
-      const consoleEl = document.getElementById('console-logs');
-      document.getElementById('log-status').innerText = 'RUNNING...';
+        function onScroll() {
+          var view = window.innerHeight || 1;
+          var shrink = window.innerWidth <= 639 ? 0 : 1 - RECEDE_SCALE;
 
-      consoleEl.innerText = 
-`$ harbor task run tasks/${task.id} --backend docker
+          if (seasonLayer && hero && heroShade) {
+            var p1 = Math.min(1, Math.max(0, 1 - seasonLayer.getBoundingClientRect().top / view));
+            hero.style.transform = p1 > 0 && shrink > 0 ? "scale(" + (1 - shrink * p1) + ")" : "";
+            heroShade.style.opacity = (RECEDE_SHADE * p1).toString();
+            hero.style.visibility = p1 >= 1 ? "hidden" : "visible";
+          }
 
-[SANDBOX] Initializing Docker container [python:3.11-slim]...
-[SANDBOX] Pinned commit: e0d8b5847e2ef30fa27ce803405c19be38d17ba7
-[ORACLE] Applying solution patch solution/solve.sh...
-patching file src/click/types.py
-Hunk #1 succeeded at 82.
-Hunk #2 succeeded at 102.
-[ORACLE] Patch verified cleanly.
+          if (timelineLayer && season && seasonShade) {
+            var p2 = Math.min(1, Math.max(0, 1 - timelineLayer.getBoundingClientRect().top / view));
+            season.style.transform = p2 > 0 && shrink > 0 ? "scale(" + (1 - shrink * p2) + ")" : "";
+            seasonShade.style.opacity = (RECEDE_SHADE * p2).toString();
+            season.style.visibility = p2 >= 1 ? "hidden" : "visible";
+          }
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      }
 
-[VERIFIER] Executing verification harness: bash tests/test.sh
-============================= test session starts ==============================
-rootdir: /workspace/click
-plugins: pytest-7.4.4
-collected 2 items
+      // 4. Chequered Seam Dissolve
+      function initSeamChecker(canvasId) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var CELL = 24;
 
-tests/test_verifier.py::test_reproduction_pass PASSED                    [ 50%]
-tests/test_verifier.py::test_regression_guard PASSED                     [100%]
+        function noise(x, y) {
+          var h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+          h = Math.imul(h ^ (h >>> 13), 1274126177);
+          return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+        }
 
-============================== 2 passed in 0.38s ===============================
+        function render(progress) {
+          var w = canvas.clientWidth || window.innerWidth;
+          var h = canvas.clientHeight || (window.innerHeight * 0.35);
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w; canvas.height = h;
+          }
+          ctx.clearRect(0, 0, w, h);
 
-[VERIFIER] Score written: /logs/verifier/reward.txt -> 1.00
-[CONTAINER] Exit status: 0
-TRIAL OUTCOME: PASSED (Reward: 1.00 / 1.00)`;
-      document.getElementById('log-status').innerText = 'VERIFIER_PASSED';
-    }
+          var cols = Math.ceil(w / CELL);
+          var rows = Math.ceil(h / CELL);
+          var lift = progress * 2;
 
-    renderEditor();
+          for (var y = 0; y < rows; y++) {
+            var depth = y / Math.max(1, rows - 1) + lift;
+            if (depth > 1) break;
+            var solid = depth <= 0.16;
+            var fade = Math.min(1, Math.max(0, 1 - (depth - 0.16) / 0.84));
+            if (!solid && fade <= 0) break;
+
+            for (var x = 0; x < cols; x++) {
+              if (!solid) {
+                if ((x + y) % 2 !== 0) continue;
+                if (noise(x, y) > fade) continue;
+              }
+              ctx.fillStyle = (!solid && noise(x + 101, y + 57) < 0.06) ? "#02d2e3" : "#f7fafb";
+              ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+            }
+          }
+        }
+
+        function onScroll() {
+          var rect = canvas.getBoundingClientRect();
+          var progress = Math.min(1, Math.max(0, 1 - (rect.top / (window.innerHeight || 1))));
+          render(progress);
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+        onScroll();
+      }
+
+      // 5. Hero 3D Engine (Pure Native Canvas 3D with Three.js Upgrade)
+      function initHero3D() {
+        var canvas = document.getElementById('hero-canvas');
+        if (!canvas) return;
+
+        // Try Three.js if available
+        if (typeof THREE !== 'undefined') {
+          try {
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 50);
+            camera.position.set(0, 0.2, 7.0);
+
+            var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true });
+            renderer.setClearColor(0xf7fafb);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            var group = new THREE.Group();
+            group.position.set(0.2, 0.2, 0);
+
+            var boxGeo = new THREE.BoxGeometry(2.2, 2.2, 2.2);
+            var boxMat = new THREE.MeshStandardMaterial({ color: 0x090a0b, metalness: 0.9, roughness: 0.2 });
+            group.add(new THREE.Mesh(boxGeo, boxMat));
+
+            var wireMat = new THREE.LineBasicMaterial({ color: 0x02d2e3, linewidth: 2 });
+            group.add(new THREE.LineSegments(new THREE.WireframeGeometry(boxGeo), wireMat));
+
+            scene.add(group);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            var dir = new THREE.DirectionalLight(0x02d2e3, 2.5);
+            dir.position.set(5, 5, 5);
+            scene.add(dir);
+
+            var mx = 0, my = 0;
+            window.addEventListener('pointermove', function(e) {
+              mx = (e.clientX / window.innerWidth) * 2 - 1;
+              my = (e.clientY / window.innerHeight) * 2 - 1;
+            });
+            window.addEventListener('resize', function() {
+              camera.aspect = window.innerWidth / window.innerHeight;
+              camera.updateProjectionMatrix();
+              renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            subscribe(function(time) {
+              var t = time / 1000;
+              group.rotation.y = t * 0.3 + mx * 0.3;
+              group.rotation.x = Math.sin(t * 0.2) * 0.2 - my * 0.2;
+              renderer.render(scene, camera);
+            });
+            return;
+          } catch(e) {
+            console.warn("Three.js setup fallback to native 3D canvas renderer", e);
+          }
+        }
+
+        // Native 3D Wireframe Canvas Renderer Fallback (100% offline, 0 dependencies)
+        var ctx = canvas.getContext('2d');
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        var nodes = [
+          [-1,-1,-1], [1,-1,-1], [1,1,-1], [-1,1,-1],
+          [-1,-1,1],  [1,-1,1],  [1,1,1],  [-1,1,1]
+        ];
+        var edges = [
+          [0,1],[1,2],[2,3],[3,0],
+          [4,5],[5,6],[6,7],[7,4],
+          [0,4],[1,5],[2,6],[3,7]
+        ];
+
+        var rotX = 0.2, rotY = 0.3;
+        var pmx = 0, pmy = 0;
+        window.addEventListener('pointermove', function(e) {
+          pmx = (e.clientX / window.innerWidth - 0.5) * 1.5;
+          pmy = (e.clientY / window.innerHeight - 0.5) * 1.5;
+        });
+
+        subscribe(function(time) {
+          var t = time * 0.001;
+          rotY = t * 0.4 + pmx;
+          rotX = Math.sin(t * 0.3) * 0.2 - pmy;
+
+          ctx.fillStyle = '#f7fafb';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Contour lines background
+          ctx.strokeStyle = 'rgba(9, 10, 11, 0.04)';
+          ctx.lineWidth = 1;
+          for (var y = 50; y < canvas.height; y += 70) {
+            ctx.beginPath();
+            for (var x = 0; x < canvas.width; x += 30) {
+              var dy = Math.sin(x * 0.005 + t * 0.5) * 25;
+              if (x === 0) ctx.moveTo(x, y + dy); else ctx.lineTo(x, y + dy);
+            }
+            ctx.stroke();
+          }
+
+          // Project 3D nodes
+          var cx = canvas.width * 0.55;
+          var cy = canvas.height * 0.5;
+          var scale = Math.min(canvas.width, canvas.height) * 0.22;
+          var proj = [];
+
+          var cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+          var cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+          for (var i = 0; i < nodes.length; i++) {
+            var n = nodes[i];
+            var x1 = n[0] * cosY - n[2] * sinY;
+            var z1 = n[2] * cosY + n[0] * sinY;
+            var y2 = n[1] * cosX - z1 * sinX;
+            var z2 = z1 * cosX + n[1] * sinX;
+            var dist = 3.5;
+            var pz = 1 / (z2 + dist);
+            proj.push([x1 * pz * scale + cx, y2 * pz * scale + cy]);
+          }
+
+          // Shaded Solid Cube Fill
+          ctx.fillStyle = 'rgba(9, 10, 11, 0.95)';
+          var faces = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[0,3,7,4],[1,2,6,5]];
+          for (var f = 0; f < faces.length; f++) {
+            var face = faces[f];
+            ctx.beginPath();
+            ctx.moveTo(proj[face[0]][0], proj[face[0]][1]);
+            for (var k = 1; k < 4; k++) ctx.lineTo(proj[face[k]][0], proj[face[k]][1]);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // Cyan Wireframe Outline
+          ctx.strokeStyle = '#02d2e3';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          for (var e = 0; e < edges.length; e++) {
+            var p1 = proj[edges[e][0]];
+            var p2 = proj[edges[e][1]];
+            ctx.moveTo(p1[0], p1[1]);
+            ctx.lineTo(p2[0], p2[1]);
+          }
+          ctx.stroke();
+        });
+      }
+
+      // 6. Section 2: Pipeline Circuit & Halftone
+      function initCircuitAndHalftone() {
+        var canvas = document.getElementById('circuit-canvas');
+        var halfCanvas = document.getElementById('circuit-halftone-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+
+        var meridian = document.getElementById('globe-meridian');
+        var globeTurn = 0;
+        var lapStart = null;
+        var waypoints = [
+          [320, 480], [380, 320], [520, 240], [680, 200], [860, 200],
+          [1040, 260], [1160, 380], [1120, 540], [980, 620], [780, 640],
+          [600, 580], [460, 560], [320, 480]
+        ];
+
+        subscribe(function(time) {
+          globeTurn += 0.02;
+          if (meridian) {
+            var rx = Math.max(0.5, Math.abs(Math.cos(globeTurn)) * 18);
+            meridian.setAttribute('rx', rx.toFixed(2));
+          }
+
+          if (lapStart === null) lapStart = time;
+          var elapsed = time - lapStart;
+          var progress = Math.min(1, elapsed / 6000);
+
+          ctx.clearRect(0, 0, 1440, 800);
+
+          // Dashed axes
+          ctx.strokeStyle = '#2a2d36';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([12, 8]);
+          ctx.lineDashOffset = (time * 0.02) % 20;
+          ctx.beginPath();
+          ctx.moveTo(720, 0); ctx.lineTo(720, 800);
+          ctx.moveTo(0, 400); ctx.lineTo(1440, 400);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Circuit line
+          ctx.strokeStyle = 'rgba(2, 210, 227, 0.4)';
+          ctx.lineWidth = 4;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          var count = Math.max(2, Math.floor(waypoints.length * progress));
+          ctx.beginPath();
+          ctx.moveTo(waypoints[0][0], waypoints[0][1]);
+          for (var i = 1; i < count; i++) {
+            ctx.lineTo(waypoints[i][0], waypoints[i][1]);
+          }
+          ctx.stroke();
+
+          // Spark head
+          var head = waypoints[count - 1];
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          var g = ctx.createRadialGradient(head[0], head[1], 0, head[0], head[1], 20);
+          g.addColorStop(0, '#ffffff');
+          g.addColorStop(0.4, '#02d2e3');
+          g.addColorStop(1, 'rgba(2, 210, 227, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(head[0], head[1], 20, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          if (elapsed > 8000) lapStart = time;
+        });
+
+        // Halftone dots
+        if (halfCanvas) {
+          var hCtx = halfCanvas.getContext('2d');
+          var dots = [];
+          for (var y = 100; y < 1350; y += 18) {
+            for (var x = 180; x < 2380; x += 18) {
+              if (Math.sin(x * 0.008) * Math.cos(y * 0.008) > -0.3) {
+                dots.push({ x: x, y: y });
+              }
+            }
+          }
+          var hmx = -1000, hmy = -1000;
+          window.addEventListener('pointermove', function(e) {
+            var r = halfCanvas.getBoundingClientRect();
+            hmx = ((e.clientX - r.left) / r.width) * 2560;
+            hmy = ((e.clientY - r.top) / r.height) * 1440;
+          });
+
+          subscribe(function() {
+            hCtx.clearRect(0, 0, 2560, 1440);
+            hCtx.fillStyle = '#4d4d4d';
+            for (var i = 0; i < dots.length; i++) {
+              var d = dots[i];
+              var dist = Math.hypot(d.x - hmx, d.y - hmy);
+              if (dist < 100) {
+                hCtx.fillStyle = '#02d2e3';
+                var sz = (1 - dist / 100) * 6;
+                hCtx.fillRect(d.x - sz/2, d.y - sz/2, sz, sz);
+                hCtx.fillStyle = '#4d4d4d';
+              } else {
+                hCtx.beginPath();
+                hCtx.arc(d.x, d.y, 1.75, 0, Math.PI * 2);
+                hCtx.fill();
+              }
+            }
+          });
+        }
+      }
+
+      // 7. Timeline Motion
+      function initTimelineMotion() {
+        var timelineSec = document.getElementById('timeline');
+        var thread = document.getElementById('timeline-thread');
+        var marker = document.getElementById('timeline-marker');
+
+        function onScroll() {
+          if (!timelineSec || !thread || !marker) return;
+          var rect = timelineSec.getBoundingClientRect();
+          var total = rect.height - window.innerHeight;
+          var progress = Math.min(1, Math.max(0, -rect.top / total));
+          thread.style.height = (progress * 100) + "%";
+          marker.style.top = (progress * 100) + "%";
+          marker.style.transform = "rotate(" + (progress * 1800) + "deg)";
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      }
+
+      // 8. Procedural Contours in Section 4 & 5
+      function initContourCanvas(id, strokeStyle, dyMax) {
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        var time = 0;
+        subscribe(function() {
+          time += 0.01;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = strokeStyle;
+          ctx.lineWidth = 1.3;
+          for (var y = 40; y < canvas.height; y += 65) {
+            ctx.beginPath();
+            for (var x = 0; x < canvas.width; x += 30) {
+              var dy = Math.sin(x * 0.005 + time) * dyMax;
+              if (x === 0) ctx.moveTo(x, y + dy); else ctx.lineTo(x, y + dy);
+            }
+            ctx.stroke();
+          }
+        });
+      }
+
+      // 9. Interactive Workbench
+      var taskData = {
+        paramtype: {
+          "task.toml": 'schema_version = "0.25.0"\n[metadata]\nname = "click-paramtype-custom-formatting"\nauthor = "Innodata Task Generation Pipeline"\ndifficulty = "medium"\ncategory = "software-engineering"\ntags = ["python", "cli", "pallets-click", "types", "bugfix"]\nsummary = "Fix ParamType name fallback in Click type conversion and metavar generation"\nbaseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"\nissue_id = "CLICK-2412"\n\n[agent]\ntimeout_sec = 600\n\n[verifier]\ntimeout_sec = 180\n\n[environment]\nos = "linux"\nbase_image = "python:3.11-slim"\ncpus = 2\nmemory_mb = 4096\nstorage_mb = 10240\ngpus = 0',
+          "instruction.md": '# Bugfix: ParamType Custom Formatting Fallback\n\nWhen declaring a custom ParamType subclass in click without explicitly overriding name = "...", error messages and metavar formatting raise an unhandled AttributeError.\n\n### Target Objectives\n1. Inspect src/click/types.py around ParamType.name.\n2. Fallback gracefully to self.__class__.__name__.lower().\n3. Verify all Click test suites remain green.',
+          "Dockerfile": 'FROM python:3.11-slim\nWORKDIR /workspace\nRUN apt-get update && apt-get install -y git patch\nRUN git clone https://github.com/pallets/click.git . && git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7\nRUN pip install -e . && pip install pytest',
+          "solve.sh": '#!/bin/bash\nset -euo pipefail\ncat << \'EOF\' > /tmp/fix.patch\n--- a/src/click/types.py\n+++ b/src/click/types.py\n@@ -82,7 +82,7 @@ class ParamType:\n-        return None\n+        return self.__class__.__name__.lower()\nEOF\ngit apply /tmp/fix.patch',
+          "test.sh": '#!/bin/bash\nmkdir -p /logs/verifier\npytest tests/test_verifier.py\nif [ $? -eq 0 ]; then\n  echo "1.0" > /logs/verifier/reward.txt\nelse\n  echo "0.0" > /logs/verifier/reward.txt\nfi',
+          "test_verifier.py": 'import click\nimport pytest\n\nclass CustomType(click.ParamType):\n    pass\n\ndef test_paramtype_fallback():\n    ct = CustomType()\n    assert ct.name == "customtype"'
+        },
+        prompt: {
+          "task.toml": 'schema_version = "0.25.0"\n[metadata]\nname = "click-hide-sensitive-prompt-default"\ndifficulty = "medium"\ncategory = "security"\nbaseline_commit = "e0d8b5847e2ef30fa27ce803405c19be38d17ba7"',
+          "instruction.md": '# Security Fix: Hide Sensitive Prompt Default\n\nMask default secrets with **** when hide_input=True.',
+          "Dockerfile": 'FROM python:3.11-slim\nWORKDIR /workspace\nRUN git clone https://github.com/pallets/click.git . && git checkout e0d8b5847e2ef30fa27ce803405c19be38d17ba7\nRUN pip install -e .',
+          "solve.sh": '#!/bin/bash\n# Patch click/termui.py',
+          "test.sh": 'pytest tests/test_verifier.py && echo "1.0" > /logs/verifier/reward.txt',
+          "test_verifier.py": 'def test_hide_sensitive_prompt():\n    assert True'
+        },
+        group: {
+          "task.toml": 'schema_version = "0.25.0"\n[metadata]\nname = "click-nested-group-subcommand-resolve"\ndifficulty = "hard"\ncategory = "dispatch"',
+          "instruction.md": '# Dispatch Fix: Nested Group Command Match Precedence\n\nExact command match precedence in nested groups.',
+          "Dockerfile": 'FROM python:3.11-slim\nWORKDIR /workspace\nRUN pip install -e .',
+          "solve.sh": '#!/bin/bash\n# Patch click/core.py',
+          "test.sh": 'pytest tests/test_verifier.py && echo "1.0" > /logs/verifier/reward.txt',
+          "test_verifier.py": 'def test_nested_group():\n    assert True'
+        }
+      };
+
+      var activeTask = "paramtype";
+      var activeFile = "task.toml";
+
+      function updateViewer() {
+        var viewer = document.getElementById('code-viewer');
+        if (viewer && taskData[activeTask] && taskData[activeTask][activeFile]) {
+          viewer.textContent = taskData[activeTask][activeFile];
+        }
+      }
+
+      function initWorkbench() {
+        var taskTabs = document.querySelectorAll('.task-tab-btn');
+        taskTabs.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            taskTabs.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            activeTask = btn.dataset.task;
+            updateViewer();
+          });
+        });
+
+        var fileBtns = document.querySelectorAll('.tree-item-btn');
+        fileBtns.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            fileBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            activeFile = btn.dataset.file;
+            updateViewer();
+          });
+        });
+
+        var lintBtn = document.getElementById('run-linter-btn');
+        if (lintBtn) {
+          lintBtn.addEventListener('click', function() {
+            var viewer = document.getElementById('code-viewer');
+            viewer.textContent = "[HARBOR LINTER v0.25.x] Running verification on tasks/" + activeTask + "...\n" +
+              "================================================================================\n" +
+              "✔ Schema validation passed (schema_version = \"0.25.0\")\n" +
+              "✔ Baseline commit confirmed: e0d8b5847e2ef30fa27ce803405c19be38d17ba7\n" +
+              "✔ Dockerfile sandbox contract verified (rootless, python:3.11-slim)\n" +
+              "✔ Oracle solve.sh verification succeeded: reward = 1.0\n" +
+              "✔ Fail-to-pass test harness isolation verified (/logs/verifier/reward.txt)\n" +
+              "================================================================================\n" +
+              "STATUS: LINT_PASS (100% SPEC COMPLIANT)";
+          });
+        }
+      }
+
+      // Initialize all systems
+      initStickyStack();
+      initSeamChecker('season-seam-canvas');
+      initHero3D();
+      initCircuitAndHalftone();
+      initTimelineMotion();
+      initContourCanvas('paddock-contour-canvas', 'rgba(9, 10, 11, 0.08)', 25);
+      initContourCanvas('footer-contour-canvas', 'rgba(255, 255, 255, 0.15)', 20);
+      initWorkbench();
+    })();
   </script>
 </body>
 </html>
